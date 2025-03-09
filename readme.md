@@ -5,9 +5,12 @@
 1. UI build
 2. Feature Creation
 3. Custom Class Creation
-4. SRD imports
-5. Build HTML file to call Beyond20 API (Sends rolls to VTT while playing)
-6. Polish
+4. Character Creation
+5. Monster Creation
+7. SRD imports
+8. Build HTML file to call Beyond20 API (Sends rolls to VTT while playing)
+9. GM Screen HTML
+10. Polish
    
 ## Contributing
 
