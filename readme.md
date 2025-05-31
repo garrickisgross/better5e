@@ -10,8 +10,20 @@ Tis a big undertaking, but I am confident I can get there.
 
 1. Main Page
 2. Feature Creator (Everything is a feature)
-3. Class Creator (Compose Class Specific Features)
-4. Character Creator
-5. Character Sheet
-6. Dice Rolling
-7. Character Export
+3. Item Creator
+4. Spell Creator
+5. Class Creator (Compose Class Specific Features)
+6. SRD Port
+7. Character Creator
+8. Character Sheet
+9. Dice Rolling
+10. SoundBoard
+11. Character Export
+
+
+#### Socials 
+
+@garrickisgross [X, Threads, IG]
+
+if you wish to contribute, send a DM, you are probably more experienced than I. I personally hate UI, as you can probably tell when you run the app lmao. So if you got those skills, bring it on!
+
