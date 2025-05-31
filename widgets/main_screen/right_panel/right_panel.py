@@ -16,7 +16,7 @@ class MainScreenRightPanel(QtWidgets.QWidget):
         self.container.addWidget(custom_button("Create A Feature", self, self.controller.create_feature))
         self.container.addWidget(custom_button("Create An Item", self, self.controller.create_item))
         self.container.addWidget(custom_button("Create A Weapon", self, self.controller.create_weapon))
-        self.container.addWidget(custom_button("Create An Spell", self, self.controller.create_spell))
+        self.container.addWidget(custom_button("Create A Spell", self, self.controller.create_spell))
 
 
 
