@@ -1,5 +1,5 @@
 import sys
-from PySide6 import QtWidgets, QtCore, QtGui
+from PySide6 import QtWidgets
 
 from PySide6.QtWidgets import QApplication
 from screens.main_screen import MainScreen

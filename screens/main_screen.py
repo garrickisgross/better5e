@@ -1,6 +1,7 @@
 
+
 from PySide6 import QtWidgets, QtCore
-from PySide6.QtCore import Slot
+from screens.create_feature import CreateFeature
 
 class  MainScreen(QtWidgets.QWidget):
     def __init__(self, app: QtWidgets.QApplication):
@@ -24,6 +25,12 @@ class  MainScreen(QtWidgets.QWidget):
         self.middle_content.addWidget(QtWidgets.QLabel("Right now we are just adding features on the right side."))
 
         # Right Side Menu
+
+        # Feature screen navigation button.
+        feature_button = QtWidgets.QPushButton("Create a Feature")
+        feature_button.clicked.connect(lambda: self.app.push_widget(CreateFeature))
+        
+        
         self.rightbar = QtWidgets.QVBoxLayout()
         self.rightbar.addWidget(QtWidgets.QPushButton("Create a Character (Coming Soon)"))
         self.rightbar.addWidget(QtWidgets.QPushButton("Create a Campaign (Coming Soon)"))
@@ -31,7 +38,7 @@ class  MainScreen(QtWidgets.QWidget):
         self.rightbar.addWidget(QtWidgets.QPushButton("Create an Item (Coming Soon)"))
         self.rightbar.addWidget(QtWidgets.QPushButton("Create a Spell (Coming Soon)"))
         self.rightbar.addWidget(QtWidgets.QPushButton("Create a Class (Coming Soon)"))
-        self.rightbar.addWidget(QtWidgets.QPushButton("Create a Feature (Coming Soon)"))
+        self.rightbar.addWidget(feature_button)
 
         
         
