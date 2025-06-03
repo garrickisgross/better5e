@@ -2,9 +2,8 @@ from pydantic import BaseModel
 import uuid
 from typing import Optional
 from models.resource import Resource
-from models.spells import Spell
+from models.spell import Spell
 from models.feature import Feature
-from models.weapon import Weapon
 
 class Item(BaseModel):
     """ Represents an item in the system. """
@@ -28,7 +27,6 @@ class Item(BaseModel):
 
     # an item can be a weapon.
     is_weapon: bool = False
-    weapon: Weapon = None
 
     
 
