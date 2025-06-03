@@ -1,50 +1,44 @@
+import uuid
+from pydantic import BaseModel
+
+from typing import Self
+
+from models.resource import Resource
+from models.skill_modifier import SkillModifier
+from models.save_modifier import SaveModifier
+from models.attribute_modifier import AttributeModifier
 from models.item import Item
 from models.spell import Spell
-from models.weapon import WeaponType
-from typing import Tuple, Optional , Any, Self
 
-class Feature:
-    """A class representing a feature in the application."""
+class Feature(BaseModel):
+    """ Represents a feature in the system. """
+    id: uuid.UUID = uuid.uuid4() # Default to a new UUID
+    name: str
+    description: str
 
-    weapon_attack_modifier: Optional[int] = None
-    weapon_attack_type: Optional[WeaponType] = None
-    weapon_damage_type: Optional[Any] = None        # TODO: Define DamageType when we are creating damage types
-    weapon_damage_dice: Optional[Any]               # TODO: Define Dice type when we are creating dice roller
-    weapon_damage_modifier: Optional[int] = None
-    spell_attack_modifier: Optional[int] = None
-    spell_damage_modifier: Optional[int] = None
-    spell_save_dc_modifier: Optional[int] = None
-    skill_modifier: Optional[Tuple[str, int]]
-    save_modifier: Optional[Tuple[str, int]]  # Tuple of (save_type, modifier)
-    stat_modifier: Optional[Tuple[str, int]]  # Tuple of (stat_type, modifier)
-    item: Optional[Item] = None
-    spell: Optional[Spell] = None
-    feature: Optional[Self] = None
+    # a feature can add one or more resources to a sheet.
+    resources: list[Resource] = []
+
+    # a feature can modify one or more skills on a sheet.
+    skill_modifiers: list[SkillModifier] = []
+
+    # a feature can modify one or more Saves on a sheet.
+    save_modifiers: list[SaveModifier] = []
+
+    # a feature can modify one or more attributes on a sheet.
+    attribute_modifiers: list[AttributeModifier] = []
+
+    # a feature can grant one or more items to a sheet. 
+    items: list[Item] = []
+
+    # a feature can grant one or more spells to a sheet.
+    spells: list[Spell] = []
+
+    # a feature can grant a spell with charges.
+    spells_with_charges: list[tuple[Spell, int]] = []
+
+    # a feature can grant one or more other features. 
+    features: list[Self] = []
 
 
     
-    def __init__(self, name: str, description: str, **kwargs):
-        """Initialize a feature with a name, description, and optional properties."""
-        self.name = name
-        self.description = description
-
-        self.properties = [
-            "weapon_attack_modifier",
-            "weapon_attack_type",
-            "weapon_damage_type",
-            "weapon_damage_dice",
-            "weapon_damage_modifier",
-            "spell_attack_modifier",
-            "spell_damage_modifier",
-            "spell_save_dc_modifier",
-            "skill_modifier",
-            "save_modifier",
-            "stat_modifier",
-            "item",
-            "spell",
-            "feature",
-        ]
-        for prop in self.properties:
-            if prop in kwargs:
-                setattr(self, prop, kwargs[prop])
-

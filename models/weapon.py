@@ -1,3 +1,0 @@
-class WeaponType:
-    ANY = "any"
-    
