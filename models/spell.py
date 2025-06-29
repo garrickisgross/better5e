@@ -1,18 +1,23 @@
 from pydantic import BaseModel
-import uuid
+from typing import Optional, List
+from models.rollable import Rollable
+from enum import Enum
+
+class Components(str, Enum):
+    """Enum for spell components."""
+    VERBAL = "V"
+    SOMATIC = "S"
+    MATERIAL = "M"
 
 class Spell(BaseModel):
-    """ Represents a spell in the system. """
-    id: uuid.UUID = uuid.uuid4()  # Default to a new UUID
     name: str
-    description: str = ""
-    level: int = 0
-    school: str = ""
-    casting_time: str = "1 action"
-    range: str = "30 feet"
-    components: str = "V, S"
-    duration: str = "Instantaneous"
-
-    # Is Save spell
-    is_save_spell: bool = False
-
+    level: int
+    school: str
+    casting_time: str
+    range: str
+    components: List[Components]
+    duration: str
+    description: str
+    damage: Optional[Rollable] = None
+    healing: Optional[Rollable] = None
+    effects: Optional[List[str]] = None
