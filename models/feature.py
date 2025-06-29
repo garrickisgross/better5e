@@ -1,16 +1,21 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Any, Optional
 from uuid import uuid4
 from models.rollable import Rollable
 from models.modifier import Modifier
+from models.enums import FeatureType, ActionType
+
+
+
 
 class Feature(BaseModel):
     id: int = uuid4().int
     name: str
-    prerequisites: Optional[str] = None  # e.g., "Requires level 3"
-    feature_type: str # e.g., "class feature", "racial feature", etc.
+    prerequisites: Optional[dict[str, Any]] = None  # mapping of prerequisite types to values, e.g., {"level": 5, "class": "fighter"}
+    prerequisites_text: Optional[str] = None  # Textual description of prerequisites
+    feature_type: FeatureType # e.g., "class feature", "racial feature", etc.
+    action_type: Optional[ActionType] = ActionType.NONE  # e.g., "action", "bonus action", "reaction"
     description: Optional[str] = None
-    action_type: Optional[str] = None  # e.g., "action", "bonus action", "reaction"
     uses: Optional[int] = None  # Number of uses per rest, if applicable
     recharge: Optional[str] = None  # e.g., "short rest", "long rest", "dawn", etc.
     granted_features: Optional[list[int]] = []

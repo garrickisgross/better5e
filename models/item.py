@@ -3,11 +3,13 @@ from pydantic import BaseModel
 from typing import Optional
 from models.rollable import Rollable
 from models.modifier import Modifier
+from models.enums import ActionType
+
 
 class Item(BaseModel):
     id: int = uuid4().int
     name: str
-    action_type: Optional[str] = None
+    action_type: Optional[ActionType] = ActionType.NONE
     item_type: str  # e.g., "weapon", "armor", "consumable", "tool"
     rarity: Optional[str] = None  # e.g., "common", "uncommon", "rare", "very rare", "legendary"
     description: Optional[str] = None

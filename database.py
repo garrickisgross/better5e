@@ -48,7 +48,7 @@ class BaseRepo:
     # ---------- CRUD ----------
     @classmethod
     def create(cls, obj: T) -> int:
-        data = cls._encode(obj.dict(exclude_none=True))
+        data = cls._encode(obj.model_dump(exclude_none=True))
         cols, vals = zip(*data.items())
         with get_db_connection() as db:
             db.execute(f"INSERT INTO {cls.TABLE} ({','.join(cols)})"

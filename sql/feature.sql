@@ -7,7 +7,8 @@ CREATE TABLE features (
     id                  INTEGER PRIMARY KEY,      -- uuid4().int → 64-bit INTEGER*
     name                TEXT    NOT NULL,
 
-    prerequisites       TEXT,                     -- free-form text (“Requires level 3”)
+    prerequisites       TEXT,                     -- JSON Object[str, Any] (e.g. {"level": 3, "class": "fighter"})
+    prerequisites_text  TEXT,                     -- human-readable text for prerequisites
     feature_type        TEXT    NOT NULL,         -- “class feature”, “feat”, “racial”, …
     description         TEXT,
     action_type         TEXT,                     -- “action”, “bonus action”, “reaction”, …
