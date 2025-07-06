@@ -59,11 +59,5 @@ CREATE TABLE IF NOT EXISTS skills (
     FOREIGN KEY (governing_stat_key) REFERENCES stats(key)
 );
 
--- 3. Modifiers  ──────────────────────────────
-CREATE TABLE IF NOT EXISTS modifiers (
-    id          TEXT PRIMARY KEY,
-    target_key  TEXT NOT NULL,
-    op          TEXT CHECK(op IN ('add', 'set')),
-    value       INTEGER NOT NULL
-);
+
 
