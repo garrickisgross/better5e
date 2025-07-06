@@ -1,7 +1,7 @@
 # dao/skill_dao.py
 from models.primitives import Skill
 from dao import stat_dao
-from dao.connection import get_conn, sqlite3
+from dao.connection import get_conn
 
 TABLE = "skills"
 
@@ -12,9 +12,9 @@ def insert(skill: Skill) -> None:
 
     with get_conn() as conn:
         conn.execute(
-            f"INSERT INTO {TABLE} (id, key, name, governing_stat_key) "
-            "VALUES (?, ?, ?, ?)",
-            (str(skill.id), skill.key, skill.name, skill.governing_stat_key),
+            f"INSERT INTO {TABLE} (id, key, name, governing_stat_key, is_default) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (str(skill.id), skill.key, skill.name, skill.governing_stat_key, skill.default),
         )
 
 def get_by_key(key: str) -> Skill | None:

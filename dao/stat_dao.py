@@ -6,9 +6,9 @@ TABLE = "stats"
 def insert(stat: Stat) -> None:
     with get_conn() as conn:
         conn.execute(
-            f"INSERT INTO {TABLE} (id, key, name, description) "
-            "VALUES (?, ?, ?, ?)",
-            (str(stat.id), stat.key, stat.name, stat.description),
+            f"INSERT INTO {TABLE} (id, key, name, description, is_default) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (str(stat.id), stat.key, stat.name, stat.description, stat.default),
         )
 
 def get_by_key(key: str) -> Stat | None:
