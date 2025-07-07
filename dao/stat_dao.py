@@ -14,12 +14,12 @@ def insert(stat: Stat) -> None:
 def get_by_key(key: str) -> Stat | None:
     with get_conn() as conn:
         row = conn.execute(
-            f"SELECT * FROM {TABLE} WHERE key = ?", (key,)
+            f"SELECT id, key, name, description, is_default AS 'default' FROM stats WHERE key = ?", (key,)
         ).fetchone()
     return Stat(**row) if row else None
 
 
 def all_stats() -> dict[str, Stat]:
     with get_conn() as conn:
-        rows = conn.execute(f"SELECT * FROM {TABLE}").fetchall()
+        rows = conn.execute(f"SELECT id, key, name, description, is_default AS 'default' FROM {TABLE}").fetchall()
     return {row["key"]: Stat(**row) for row in rows}

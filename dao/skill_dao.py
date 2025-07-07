@@ -20,11 +20,11 @@ def insert(skill: Skill) -> None:
 def get_by_key(key: str) -> Skill | None:
     with get_conn() as conn:
         row = conn.execute(
-            f"SELECT * FROM {TABLE} WHERE key = ?", (key,)
+            f"SELECT id, key, name, governing_stat_key, is_default AS 'default' FROM {TABLE} WHERE key = ?", (key,)
         ).fetchone()
     return Skill(**row) if row else None
 
 def all_stats() -> dict[str, Skill]:
     with get_conn() as conn:
-        rows = conn.execute(f"SELECT * FROM {TABLE}").fetchall()
+        rows = conn.execute(f"SELECT id, key, name, governing_stat_key, is_default AS 'default' FROM {TABLE}").fetchall()
     return {row["key"]: Skill(**row) for row in rows}

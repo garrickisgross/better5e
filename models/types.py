@@ -1,5 +1,5 @@
 from typing import Literal
-from primitives import Asset, FeatureData, SpellData, ItemData, ClassData, SubClassData, ResourceData
+from models.primitives import Asset, FeatureData, SpellData, ItemData, ClassData, SubClassData, ResourceData
 
 class Feature(Asset):
     type: Literal["feature"] = "feature"

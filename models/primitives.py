@@ -18,7 +18,7 @@ class Skill(BaseModel):
     key: SkillKeyType
     name: str
     governing_stat_key: StatKeyType
-    default: bool = False
+    default: bool
 
     @staticmethod
     def validate_gov_stat(skill, all_stats:dict[str, Stat]):
@@ -32,7 +32,7 @@ class Modifier(BaseModel):
     value: int
 
     def validate_key(self, all_stats: dict[str, Stat], all_skills:dict[str, Skill]):
-        if self.target_key not in all_stats or self.target_key not in all_skills:
+        if self.target_key not in all_stats and self.target_key not in all_skills:
             raise ValueError(f"Unknown Target: {self.target_key}")
 
 class Asset(BaseModel):
