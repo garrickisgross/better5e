@@ -26,5 +26,5 @@ def hydrate(game_object: GameObject):
     cls = TYPE_MAP.get(game_object.type)
     if not cls:
         raise ValueError(f"Unknown type: {game_object.type}")
-    return cls.parse_obj(game_object.data)
+    return cls.model_validate(game_object.data)
 

@@ -54,7 +54,7 @@ def test_character_and_related_models_and_hydrate():
     subcls = Subclass(parent=uuid4(), features={1: [uuid4()]})
     assert subcls.features
 
-    game_obj_char = GameObject(name="hero", type="character", data=char.dict())
+    game_obj_char = GameObject(name="hero", type="character", data=char.model_dump())
     hydrated = hydrate(game_obj_char)
     assert isinstance(hydrated, Character)
     assert hydrated.background == background_id
@@ -84,8 +84,8 @@ def test_spell_and_spellcasting_and_mount():
     sc = Spellcasting(ability="int", spell_list=spell_list, slots=slots)
     assert sc.slots[2][2] == 1
 
-    sc_obj = GameObject(name="Wizard Spellcasting", type="spellcasting", data=sc.dict())
-    spell_obj = GameObject(name="Fire Bolt", type="spell", data=spell.dict())
+    sc_obj = GameObject(name="Wizard Spellcasting", type="spellcasting", data=sc.model_dump())
+    spell_obj = GameObject(name="Fire Bolt", type="spell", data=spell.model_dump())
 
     hydrated_sc = hydrate(sc_obj)
     hydrated_spell = hydrate(spell_obj)
@@ -97,6 +97,6 @@ def test_spell_and_spellcasting_and_mount():
     assert cls.spellcasting == sc_obj.id
     mod = Modifier(target="stats.speed", op="set", value=30)
     race = Race(features=[uuid4()], modifiers=[mod])
-    game_obj_race = GameObject(name="elf", type="race", data=race.dict())
+    game_obj_race = GameObject(name="elf", type="race", data=race.model_dump())
     hydrated_race = hydrate(game_obj_race)
     assert isinstance(hydrated_race, Race)

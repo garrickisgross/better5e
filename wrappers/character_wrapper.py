@@ -77,7 +77,7 @@ class LiveCharacter(LiveObject):
             if spellcasting_id:
                 sc_obj = self.dao.get_by_id(spellcasting_id)
                 hydrated_sc = hydrate(sc_obj)
-                spellcasting_map[class_obj.name] = hydrated_sc.dict()
+                spellcasting_map[class_obj.name] = hydrated_sc.model_dump()
                 spells_map[class_obj.name] = [
                     hydrate(self.dao.get_by_id(spell_id))
                     for spell_id in hydrated_sc.spell_list
