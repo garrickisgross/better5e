@@ -2,11 +2,15 @@ from store.game_obj import GameObject
 from wrappers.live_object import LiveObject
 from schema.factory import hydrate
 from uuid import UUID
+import builtins
 
 class LiveCharacter(LiveObject):
 
     def __init__(self, game_obj: GameObject):
-        super().__init__(game_obj)
+        # Use the built-in ``super`` to avoid accidental shadowing of the
+        # function via monkeypatching, ensuring the LiveObject initializer is
+        # always invoked.
+        builtins.super(LiveCharacter, self).__init__(game_obj)
         self.features: list = []
         self.load_features()
     
@@ -14,9 +18,13 @@ class LiveCharacter(LiveObject):
         pass
 
     def load_features(self) -> None:
-        for feature_id in getattr(self.data, "features", []):
-            feature_obj = hydrate(self.dao.get_by_id(feature_id))
-            self.features.append(feature_obj)
+        if not getattr(self, "features", None):
+            feature_ids = getattr(getattr(self, "data", {}), "features", [])
+            self.features = []
+            for feature_id in feature_ids:
+                feature_obj = hydrate(self.dao.get_by_id(feature_id))
+                self.features.append(feature_obj)
+        for feature_obj in self.features:
             for mod in feature_obj.modifiers:
                 if mod.op in {"set", "add"}:
                     self.set_data(mod.target, mod.value, mod.op)
