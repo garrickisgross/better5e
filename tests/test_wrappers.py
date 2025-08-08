@@ -268,6 +268,47 @@ def test_load_race_invalid_modifier(monkeypatch):
     with pytest.raises(ValueError):
         cw.LiveCharacter._load_race(DummyLC())
 
+
+def test_load_items(monkeypatch):
+    add_mod = SimpleNamespace(target="stats.hp", op="add", value=2)
+    grant_mod = SimpleNamespace(target="", op="grant", value=uuid4())
+    bad_mod = SimpleNamespace(target="", op="oops", value=0)
+    item_eq = SimpleNamespace(equipped=True, modifiers=[add_mod, grant_mod])
+    item_uneq = SimpleNamespace(equipped=False, modifiers=[add_mod])
+    item_bad = SimpleNamespace(equipped=True, modifiers=[bad_mod])
+
+    class DummyDAO:
+        def __init__(self, objects):
+            self.objects = objects
+        def get_by_id(self, obj_id):
+            return self.objects[obj_id]
+
+    class DummyLC:
+        def __init__(self, dao, inventory):
+            self.items = []
+            self.dao = dao
+            self.data = SimpleNamespace(inventory=inventory)
+            self.set_calls = []
+            self.grants = []
+
+        def set_data(self, t, v, op):
+            self.set_calls.append((t, v, op))
+
+        def grant(self, value):
+            self.grants.append(value)
+
+    monkeypatch.setattr(cw, "hydrate", lambda x: x)
+
+    dummy = DummyLC(DummyDAO({"eq": item_eq, "uneq": item_uneq}), ["eq", "uneq"])
+    cw.LiveCharacter.load_items(dummy)
+    assert dummy.items == [item_eq, item_uneq]
+    assert dummy.set_calls == [("stats.hp", 2, "add")]
+    assert dummy.grants == [grant_mod.value]
+
+    dummy_bad = DummyLC(DummyDAO({"bad": item_bad}), ["bad"])
+    with pytest.raises(ValueError):
+        cw.LiveCharacter.load_items(dummy_bad)
+
     
 def test_livecharacter_init_feature_ids(monkeypatch):
     feature_id = uuid4()
