@@ -1,7 +1,9 @@
 import random
 import pytest
+from uuid import uuid4
 
 from schema.rollable import Rollable
+from schema.character import Character, CharacterClass
 
 
 def test_roll_int(monkeypatch):
@@ -28,11 +30,28 @@ def test_roll_single_die(monkeypatch):
 
 
 def test_invalid_notation():
-    r = Rollable('2f6')
     with pytest.raises(ValueError):
-        r.roll()
+        Rollable('2f6')
 
 
 def test_invalid_input_type():
     with pytest.raises(TypeError):
         Rollable(3.5)
+
+
+def test_roll_with_character_modifier(monkeypatch):
+    ability_scores = {"str": {"proficient": True, "value": 10, "modifier": 2}}
+    char = Character(
+        ac=10,
+        ability_scores=ability_scores,
+        proficiency_bonus=2,
+        skills={},
+        background=uuid4(),
+        race=uuid4(),
+        features=[],
+        inventory=[],
+        classes=[CharacterClass(class_id=uuid4(), level=1)],
+    )
+    r = Rollable({"dice": "1d20", "modifier": "str"})
+    monkeypatch.setattr(random, 'randint', lambda a, b: 10)
+    assert r.roll(char) == 12
