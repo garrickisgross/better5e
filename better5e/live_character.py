@@ -42,7 +42,7 @@ class LiveCharacter(Character):
 
     def _apply_grants_from(self, obj: GameObject) -> None:
         queue = deque([obj])
-        seen: set[UUID] = set()
+        seen: set[UUID] = {o.uuid for o in self.all_game_objects()}
         while queue:
             current = queue.popleft()
             if current.uuid in seen:

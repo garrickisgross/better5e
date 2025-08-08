@@ -51,3 +51,20 @@ def test_live_character_grant_and_set_data():
     data = live.to_dict()
     assert data["stats"]["dexterity"] == 14
     assert "dao" not in data
+
+
+def test_live_character_prevents_duplicate_grants_and_handles_cycles():
+    feat_a = Feature(name="A")
+    feat_b = Feature(name="B", grants=[feat_a.uuid])
+    feat_a.grants.append(feat_b.uuid)
+    dao = DummyDAO([feat_a, feat_b])
+    live = LiveCharacter(Character(name="Hero"), dao)
+    live.grant(feat_a.uuid)
+    live.grant(feat_a.uuid)
+    ids = [f.uuid for f in live.features]
+    assert ids.count(feat_a.uuid) == 1
+    assert ids.count(feat_b.uuid) == 1
+    live.set_data("name", "Warrior")
+    assert live.name == "Warrior"
+    assert f"set:name" in live.events
+    assert live.get_modifier("strength") == 0
