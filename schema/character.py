@@ -21,3 +21,7 @@ class Character(BaseModel):
     classes: list[CharacterClass]
     spellcasting: Optional[dict[Any, Any]]  # change when we work on spellcasting object
 
+    @property
+    def level(self) -> int:
+        return sum(c.level for c in self.classes)
+
