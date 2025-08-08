@@ -6,6 +6,7 @@ import pytest
 from wrappers import live_object
 from wrappers import character_wrapper as cw
 from schema.primitives import Modifier
+from store.game_obj import GameObject
 
 
 class DummyGameObject:
@@ -96,3 +97,44 @@ def test_livecharacter_init_and_load_features(monkeypatch):
     assert dummy.grants == [grant_mod.value]
 
     cw.LiveCharacter.grant(dummy, uuid4())
+
+
+def test_livecharacter_apply_background():
+    set_mod = Modifier(target="stats.hp", op="set", value=1)
+    add_mod = Modifier(target="stats.hp", op="add", value=2)
+    grant_mod = Modifier(target="", op="grant", value=uuid4())
+    bad_mod = SimpleNamespace(target="", op="oops", value=0)
+
+    good_bg = GameObject(
+        name="acolyte",
+        type="background",
+        data={"description": "d", "modifiers": [set_mod, add_mod, grant_mod]},
+    )
+    bad_bg = GameObject(
+        name="acolyte",
+        type="background",
+        data={"description": "d", "modifiers": [bad_mod]},
+    )
+
+    class DummyLC:
+        def __init__(self, bg_obj):
+            self.dao = SimpleNamespace(get_by_id=lambda _id: bg_obj)
+            self.data = SimpleNamespace(background=uuid4())
+            self.set_calls = []
+            self.grants = []
+
+        def set_data(self, t, v, op):
+            self.set_calls.append((t, v, op))
+
+        def grant(self, value):
+            self.grants.append(value)
+
+    dummy = DummyLC(good_bg)
+    cw.LiveCharacter.apply_background(dummy)
+    assert dummy.set_calls[0] == ("stats.hp", 1, "set")
+    assert dummy.set_calls[1] == ("stats.hp", 2, "add")
+    assert dummy.grants == [grant_mod.value]
+
+    dummy_bad = DummyLC(bad_bg)
+    with pytest.raises(ValueError):
+        cw.LiveCharacter.apply_background(dummy_bad)

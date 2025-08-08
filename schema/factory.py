@@ -3,13 +3,14 @@ from schema.character import Character
 from schema.feature import Feature
 from schema.class_ import Class
 from schema.subclass import Subclass
+from schema.background import Background
 
 TYPE_MAP = {
     "character": Character,
     "class": Class,
     "subclass": Subclass,
     "race": None,
-    "background": None,
+    "background": Background,
     "feature": Feature,
     "item": None,
     "spell": None,
