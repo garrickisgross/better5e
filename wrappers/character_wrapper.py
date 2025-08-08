@@ -12,8 +12,10 @@ class LiveCharacter(LiveObject):
         # always invoked.
         builtins.super(LiveCharacter, self).__init__(game_obj)
         self.features: list = []
+        self.spells: dict = {}
         self.apply_background()
         self.load_features()
+        self.load_spellcasting()
     
     def grant(self, id: UUID) -> None:
         pass
@@ -59,6 +61,26 @@ class LiveCharacter(LiveObject):
                     self.grant(mod.value)
                 else:
                     raise ValueError("Modifier operation is invalid")
+
+    def load_spellcasting(self) -> None:
+        spellcasting_map = {}
+        spells_map = {}
+        for class_entry in getattr(getattr(self, "data", {}), "classes", []):
+            class_obj = self.dao.get_by_id(class_entry.class_id)
+            hydrated_class = hydrate(class_obj)
+            spellcasting_id = getattr(hydrated_class, "spellcasting", None)
+            if spellcasting_id:
+                sc_obj = self.dao.get_by_id(spellcasting_id)
+                hydrated_sc = hydrate(sc_obj)
+                spellcasting_map[class_obj.name] = hydrated_sc.dict()
+                spells_map[class_obj.name] = [
+                    hydrate(self.dao.get_by_id(spell_id))
+                    for spell_id in hydrated_sc.spell_list
+                ]
+        if spellcasting_map:
+            self.raw.data.setdefault("spellcasting", {}).update(spellcasting_map)
+            self.process_change()
+        self.spells = spells_map
                 
 
     

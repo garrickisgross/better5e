@@ -3,9 +3,10 @@ from schema.character import Character
 from schema.feature import Feature
 from schema.class_ import Class
 from schema.subclass import Subclass
+from schema.spell import Spell
+from schema.spellcasting import Spellcasting
 from schema.background import Background
 from schema.race import Race
-
 
 TYPE_MAP = {
     "character": Character,
@@ -15,7 +16,8 @@ TYPE_MAP = {
     "race": Race,
     "feature": Feature,
     "item": None,
-    "spell": None,
+    "spell": Spell,
+    "spellcasting": Spellcasting,
     "monster": None,
     "npc": None,
 }
