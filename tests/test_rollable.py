@@ -55,3 +55,13 @@ def test_roll_with_character_modifier(monkeypatch):
     r = Rollable({"dice": "1d20", "modifier": "str"})
     monkeypatch.setattr(random, 'randint', lambda a, b: 10)
     assert r.roll(char) == 12
+
+
+def test_rollable_model_validator_direct():
+    assert Rollable._validate_before("1d4") == {"dice": "1d4", "modifier": 0}
+
+
+def test_rollable_requires_character_for_str_modifier():
+    r = Rollable({"dice": "1d20", "modifier": "str"})
+    with pytest.raises(ValueError):
+        r.roll()

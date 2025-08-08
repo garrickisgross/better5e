@@ -26,9 +26,11 @@ class Rollable(BaseModel):
         return super().model_validate(data, **kwargs)
 
     @classmethod
-    @model_validator(mode="before")
     def _validate_before(cls, v):
         return cls._coerce(v)
+
+    # Expose validator to pydantic while keeping _validate_before callable
+    _pydantic_validate_before = model_validator(mode="before")(_validate_before.__func__)
 
     @classmethod
     def _coerce(cls, v):
