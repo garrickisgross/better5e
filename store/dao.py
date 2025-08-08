@@ -1,4 +1,5 @@
 import sqlite3
+import json
 from uuid import UUID
 from typing import List
 
@@ -23,7 +24,7 @@ def get_game_object_by_id(object_id: UUID) -> GameObject:
                 id=UUID(row['id']),
                 name=row['name'],
                 type=row['type'],
-                data=row['data']
+                data=json.loads(row['data'])
             )
         else:
             raise ValueError(f"GameObject with ID {object_id} not found.")
@@ -39,7 +40,7 @@ def get_all_by_type(object_type: str) -> List[GameObject]:
                 id=UUID(row['id']),
                 name=row['name'],
                 type=row['type'],
-                data=row['data']
+                data=json.loads(row['data'])
             )
             for row in rows
         ]
@@ -51,7 +52,7 @@ def insert_game_object(game_object: GameObject) -> None:
         try: 
             cursor.execute(
                 "INSERT INTO game_objects (id, name, type, data) VALUES (?, ?, ?, ?)",
-                (str(game_object.id), game_object.name, game_object.type, game_object.data)
+                (str(game_object.id), game_object.name, game_object.type, json.dumps(game_object.data))
             )
         except sqlite3.IntegrityError as e:
             raise ValueError(f"GameObject with ID {game_object.id} already exists.") from e
@@ -71,7 +72,7 @@ def update_game_object(game_object: GameObject) -> None:
         cursor = conn.cursor()
         cursor.execute(
             "UPDATE game_objects SET name = ?, type = ?, data = ? WHERE id = ?",
-            (game_object.name, game_object.type, game_object.data, str(game_object.id))
+            (game_object.name, game_object.type, json.dumps(game_object.data), str(game_object.id))
         )
         conn.commit()
         if cursor.rowcount == 0:
