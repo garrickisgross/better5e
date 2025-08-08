@@ -47,10 +47,12 @@ This example matches the one in `examples.py` and can be run directly:
 python examples.py
 ```
 
-## Game Object Wizard
+## Using the Game Object Wizard
 
-The `GameObjectWizard` offers a step-based builder for creating game objects
-with type-aware forms. The snippet below shows building a simple weapon item:
+`GameObjectWizard` drives a simple step based flow.  Each call to
+``apply`` requires the current revision number which the wizard returns in the
+previous response.  The example below creates a basic weapon item and finalises
+it without saving:
 
 ```python
 from pathlib import Path
@@ -60,27 +62,24 @@ from better5e.wizard import GameObjectWizard
 wiz = GameObjectWizard(FileDAO(Path("data")))
 sid = wiz.start("item")
 
-# core step
-wiz.apply(sid, {"name": "Longsword", "type": "item"})
+# step 0 -> core
+resp = wiz.apply(sid, {"name": "Longsword"}, revision=0)
 
-# type-specific fields
-wiz.apply(sid, {
-    "data": {
-        "category": "weapon",
-        "damage": "1d8",
-        "damage_type": "slashing",
-        "properties": ["versatile"],
-    }
-})
+# step 1 -> type specific
+resp = wiz.apply(
+    sid,
+    {"category": "weapon", "damage": "1d8", "damage_type": "slashing"},
+    revision=1,
+)
 
-# modifiers and grants steps (empty in this example)
-wiz.apply(sid, {"modifiers": []})
-wiz.apply(sid, {"grants": []})
+# modifiers & grants skipped
+resp = wiz.apply(sid, {"modifiers": []}, revision=2)
+resp = wiz.apply(sid, {"grants": []}, revision=3)
 
-preview = wiz.preview(sid)
-result = wiz.finalize(sid, save=False)
-print(preview)
-print(result["model"]["name"])
+print(wiz.preview(sid))
+obj = wiz.finalize(sid, save=False)
+print(obj["uuid"])
 ```
 
-Running this snippet prints a preview summary and the finalized object's name.
+The wizard only mutates its internal session state; all returned structures are
+plain JSON serialisable data.

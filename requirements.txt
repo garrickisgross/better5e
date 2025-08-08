@@ -1,8 +1,9 @@
-Pygments==2.19.2
 annotated-types==0.7.0
+attrs==25.3.0
 black==25.1.0
 click==8.2.1
 coverage==7.10.2
+hypothesis==6.137.1
 iniconfig==2.1.0
 isort==6.0.1
 mypy==1.17.1
@@ -14,9 +15,11 @@ platformdirs==4.3.8
 pluggy==1.6.0
 pydantic==2.11.7
 pydantic_core==2.33.2
+Pygments==2.19.2
 pyright==1.1.403
-pytest-cov==6.2.1
 pytest==8.4.1
+pytest-cov==6.2.1
 ruff==0.12.7
+sortedcontainers==2.4.0
 typing-inspection==0.4.1
 typing_extensions==4.14.1

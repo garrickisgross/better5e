@@ -1,0 +1,168 @@
+{
+  "steps": [
+    {
+      "fields": [
+        {
+          "key": "name",
+          "label": "Name",
+          "required": true,
+          "type": "text"
+        }
+      ],
+      "name": "core"
+    },
+    {
+      "fields": [
+        {
+          "key": "level",
+          "label": "Level",
+          "required": true,
+          "type": "number"
+        },
+        {
+          "choices": [
+            "abjuration",
+            "conjuration",
+            "divination",
+            "enchantment",
+            "evocation",
+            "illusion",
+            "necromancy",
+            "transmutation"
+          ],
+          "key": "school",
+          "label": "School",
+          "type": "select"
+        },
+        {
+          "key": "casting_time",
+          "label": "Casting Time",
+          "type": "text"
+        },
+        {
+          "key": "range",
+          "label": "Range",
+          "type": "text"
+        },
+        {
+          "key": "duration",
+          "label": "Duration",
+          "type": "text"
+        },
+        {
+          "choices": [
+            "V",
+            "S",
+            "M"
+          ],
+          "key": "components",
+          "label": "Components",
+          "type": "multiselect"
+        },
+        {
+          "key": "materials",
+          "label": "Materials",
+          "type": "text"
+        },
+        {
+          "choices": [
+            "attack",
+            "str",
+            "dex",
+            "con",
+            "int",
+            "wis",
+            "cha",
+            "none"
+          ],
+          "key": "attack_save",
+          "label": "Attack/Save",
+          "type": "select"
+        },
+        {
+          "key": "damage",
+          "label": "Damage",
+          "type": "dice"
+        },
+        {
+          "choices": [
+            "bludgeoning",
+            "piercing",
+            "slashing",
+            "fire",
+            "cold",
+            "acid",
+            "poison",
+            "lightning",
+            "thunder",
+            "necrotic",
+            "radiant",
+            "psychic",
+            "force"
+          ],
+          "key": "damage_type",
+          "label": "Damage Type",
+          "type": "select"
+        }
+      ],
+      "name": "type_specific"
+    },
+    {
+      "fields": [
+        {
+          "key": "modifiers",
+          "label": "Modifiers",
+          "row": {
+            "condition": {
+              "label": "Condition",
+              "type": "text"
+            },
+            "operation": {
+              "choices": [
+                "add",
+                "multiply",
+                "set",
+                "grant"
+              ],
+              "label": "Operation",
+              "required": true,
+              "type": "select"
+            },
+            "stackable": {
+              "default": true,
+              "label": "Stackable",
+              "type": "boolean"
+            },
+            "target": {
+              "label": "Target",
+              "required": true,
+              "type": "text"
+            },
+            "value": {
+              "label": "Value",
+              "required": true,
+              "type": "text"
+            }
+          },
+          "type": "rows"
+        }
+      ],
+      "name": "modifiers"
+    },
+    {
+      "fields": [
+        {
+          "key": "grants",
+          "label": "Grants",
+          "type": "uuid_list"
+        }
+      ],
+      "name": "grants"
+    },
+    {
+      "fields": [],
+      "name": "review"
+    }
+  ],
+  "title": "Spell Builder"
+}

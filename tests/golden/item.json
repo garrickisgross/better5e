@@ -1,0 +1,151 @@
+{
+  "steps": [
+    {
+      "fields": [
+        {
+          "key": "name",
+          "label": "Name",
+          "required": true,
+          "type": "text"
+        }
+      ],
+      "name": "core"
+    },
+    {
+      "fields": [
+        {
+          "choices": [
+            "weapon",
+            "armor",
+            "consumable",
+            "tool",
+            "gear",
+            "misc"
+          ],
+          "key": "category",
+          "label": "Category",
+          "type": "select"
+        },
+        {
+          "key": "weight",
+          "label": "Weight",
+          "type": "number"
+        },
+        {
+          "key": "value",
+          "label": "Value",
+          "type": "number"
+        },
+        {
+          "choices": [
+            "light",
+            "finesse",
+            "two_handed",
+            "versatile"
+          ],
+          "key": "properties",
+          "label": "Properties",
+          "type": "multiselect"
+        },
+        {
+          "key": "damage",
+          "label": "Damage",
+          "type": "dice"
+        },
+        {
+          "choices": [
+            "bludgeoning",
+            "piercing",
+            "slashing",
+            "fire",
+            "cold",
+            "acid",
+            "poison",
+            "lightning",
+            "thunder",
+            "necrotic",
+            "radiant",
+            "psychic",
+            "force"
+          ],
+          "key": "damage_type",
+          "label": "Damage Type",
+          "type": "select"
+        },
+        {
+          "key": "ac_base",
+          "label": "AC Base",
+          "type": "number"
+        },
+        {
+          "choices": [
+            true,
+            false
+          ],
+          "default": false,
+          "key": "stealth_disadvantage",
+          "label": "Stealth Disadvantage",
+          "type": "select"
+        }
+      ],
+      "name": "type_specific"
+    },
+    {
+      "fields": [
+        {
+          "key": "modifiers",
+          "label": "Modifiers",
+          "row": {
+            "condition": {
+              "label": "Condition",
+              "type": "text"
+            },
+            "operation": {
+              "choices": [
+                "add",
+                "multiply",
+                "set",
+                "grant"
+              ],
+              "label": "Operation",
+              "required": true,
+              "type": "select"
+            },
+            "stackable": {
+              "default": true,
+              "label": "Stackable",
+              "type": "boolean"
+            },
+            "target": {
+              "label": "Target",
+              "required": true,
+              "type": "text"
+            },
+            "value": {
+              "label": "Value",
+              "required": true,
+              "type": "text"
+            }
+          },
+          "type": "rows"
+        }
+      ],
+      "name": "modifiers"
+    },
+    {
+      "fields": [
+        {
+          "key": "grants",
+          "label": "Grants",
+          "type": "uuid_list"
+        }
+      ],
+      "name": "grants"
+    },
+    {
+      "fields": [],
+      "name": "review"
+    }
+  ],
+  "title": "Item Builder"
+}

@@ -1,0 +1,111 @@
+{
+  "steps": [
+    {
+      "fields": [
+        {
+          "key": "name",
+          "label": "Name",
+          "required": true,
+          "type": "text"
+        }
+      ],
+      "name": "core"
+    },
+    {
+      "fields": [
+        {
+          "key": "description",
+          "label": "Description",
+          "type": "text"
+        },
+        {
+          "choices": [
+            "passive",
+            "action",
+            "bonus_action",
+            "reaction",
+            "special"
+          ],
+          "key": "activation",
+          "label": "Activation",
+          "type": "select"
+        },
+        {
+          "key": "uses.max",
+          "label": "Max Uses",
+          "type": "number"
+        },
+        {
+          "choices": [
+            "long_rest",
+            "short_rest",
+            "at_will",
+            "per_day",
+            "per_encounter"
+          ],
+          "key": "uses.recharge",
+          "label": "Recharge",
+          "type": "select"
+        }
+      ],
+      "name": "type_specific"
+    },
+    {
+      "fields": [
+        {
+          "key": "modifiers",
+          "label": "Modifiers",
+          "row": {
+            "condition": {
+              "label": "Condition",
+              "type": "text"
+            },
+            "operation": {
+              "choices": [
+                "add",
+                "multiply",
+                "set",
+                "grant"
+              ],
+              "label": "Operation",
+              "required": true,
+              "type": "select"
+            },
+            "stackable": {
+              "default": true,
+              "label": "Stackable",
+              "type": "boolean"
+            },
+            "target": {
+              "label": "Target",
+              "required": true,
+              "type": "text"
+            },
+            "value": {
+              "label": "Value",
+              "required": true,
+              "type": "text"
+            }
+          },
+          "type": "rows"
+        }
+      ],
+      "name": "modifiers"
+    },
+    {
+      "fields": [
+        {
+          "key": "grants",
+          "label": "Grants",
+          "type": "uuid_list"
+        }
+      ],
+      "name": "grants"
+    },
+    {
+      "fields": [],
+      "name": "review"
+    }
+  ],
+  "title": "Feature Builder"
+}
