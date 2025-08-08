@@ -39,6 +39,16 @@ if not db_path.exists():
     conn.close()
 ```
 
+## CLI frontend
+
+A minimal command line interface is available for creating Better5e objects. After installing the requirements, launch it with:
+
+```bash
+python -m cli.main
+```
+
+Follow the prompts to create features, classes, subclasses, spellcasting, spells, items, and characters.
+
 ## Running tests
 
 Tests live in the `tests/` directory and can be executed with:
