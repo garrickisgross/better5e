@@ -83,3 +83,15 @@ print(obj["uuid"])
 
 The wizard only mutates its internal session state; all returned structures are
 plain JSON serialisable data.
+
+## Better5e CLI (developer preview)
+
+```
+# File storage in ./data by default
+python -m better5e list
+python -m better5e new item
+python -m better5e show <uuid>
+python -m better5e edit <uuid>
+python -m better5e export <uuid> --out longsword.json
+python -m better5e import --type item --in longsword.json
+```
