@@ -24,6 +24,18 @@ class LiveObject:
         return target
 
     def set_data(self, path: str, value: Any, op: str) -> None:
+        """Modify ``raw`` data following ``path`` using the operation ``op``.
+
+        Parameters
+        ----------
+        path:
+            Dot-delimited path within ``raw.data`` to update.
+        value:
+            The value to set or add.
+        op:
+            Operation to perform: ``"set"`` assigns the value while
+            ``"add"`` increments the existing value.
+        """
         keys = path.split(".")
         parent = self._navigate(self.raw.data, keys[:-1])
         final_key = keys[-1]
@@ -48,7 +60,8 @@ class LiveObject:
                 raise ValueError("Unsupported operation")
 
         self.process_change()
-    
+
     def process_change(self) -> None:
+        """Re-hydrate the object and persist changes to the data store."""
         self.data = hydrate(self.raw)
         self.dao.update(self.raw)

@@ -20,6 +20,28 @@ class LiveCharacter(LiveObject):
         self.load_spellcasting()
         self.load_items()
 
+    def _apply_modifier(self, mod, queue: deque | None = None, seen: set[UUID] | None = None) -> None:
+        """Apply a single modifier to the character."""
+        if mod.op in {"set", "add"}:
+            self.set_data(mod.target, mod.value, mod.op)
+        elif mod.op == "grant":
+            if queue is not None and seen is not None:
+                if mod.value not in seen:
+                    queue.append(mod.value)
+            else:
+                grant_fn = getattr(self, "grant", None)
+                if grant_fn is None:
+                    LiveCharacter.grant(self, mod.value)
+                else:
+                    grant_fn(mod.value)
+        else:
+            raise ValueError("Modifier operation is invalid")
+
+    def _apply_modifiers(self, modifiers, queue: deque | None = None, seen: set[UUID] | None = None) -> None:
+        """Apply a list of modifiers using :py:meth:`_apply_modifier`."""
+        for mod in modifiers:
+            LiveCharacter._apply_modifier(self, mod, queue, seen)
+
     def grant(self, id: UUID) -> None:
         # ``grant`` may be invoked in unit tests with incomplete dummy
         # objects.  If the instance lacks a DAO, there is nothing we can do.
@@ -68,27 +90,17 @@ class LiveCharacter(LiveObject):
                 modifiers = getattr(hydrated, "modifiers", [])
 
             for mod in modifiers:
-                if mod.op in {"set", "add"}:
-                    self.set_data(mod.target, mod.value, mod.op)
-                elif mod.op == "grant":
-                    # Enqueue new grants for breadth-first processing.
-                    if mod.value not in seen:
-                        queue.append(mod.value)
+                if mod.op == "grant" and mod.value not in seen:
+                    queue.append(mod.value)
                 else:
-                    raise ValueError("Modifier operation is invalid")
+                    LiveCharacter._apply_modifier(self, mod, queue, seen)
 
     def apply_background(self) -> None:
         background_id = getattr(getattr(self, "data", None), "background", None)
         if not background_id:
             return
         background_obj = hydrate(self.dao.get_by_id(background_id))
-        for mod in background_obj.modifiers:
-            if mod.op in {"set", "add"}:
-                self.set_data(mod.target, mod.value, mod.op)
-            elif mod.op == "grant":
-                self.grant(mod.value)
-            else:
-                raise ValueError("Modifier operation is invalid")
+        LiveCharacter._apply_modifiers(self, background_obj.modifiers)
         
     def _load_race(self) -> None:
         data = getattr(self, "data", None)
@@ -99,13 +111,7 @@ class LiveCharacter(LiveObject):
         for feature_id in race_obj.features:
             feature_obj = hydrate(self.dao.get_by_id(feature_id))
             self.features.append(feature_obj)
-        for mod in race_obj.modifiers:
-            if mod.op in {"set", "add"}:
-                self.set_data(mod.target, mod.value, mod.op)
-            elif mod.op == "grant":
-                self.grant(mod.value)
-            else:
-                raise ValueError("Modifier operation is invalid")
+        LiveCharacter._apply_modifiers(self, race_obj.modifiers)
 
     def load_features(self) -> None:
         if not getattr(self, "features", None):
@@ -116,13 +122,7 @@ class LiveCharacter(LiveObject):
                 self.features.append(feature_obj)
             self._load_race()
         for feature_obj in self.features:
-            for mod in feature_obj.modifiers:
-                if mod.op in {"set", "add"}:
-                    self.set_data(mod.target, mod.value, mod.op)
-                elif mod.op == "grant":
-                    self.grant(mod.value)
-                else:
-                    raise ValueError("Modifier operation is invalid")
+            LiveCharacter._apply_modifiers(self, feature_obj.modifiers)
 
     def load_spellcasting(self) -> None:
         spellcasting_map = {}
@@ -151,13 +151,7 @@ class LiveCharacter(LiveObject):
             item_obj = hydrate(self.dao.get_by_id(item_id))
             self.items.append(item_obj)
             if getattr(item_obj, "equipped", False):
-                for mod in item_obj.modifiers:
-                    if mod.op in {"set", "add"}:
-                        self.set_data(mod.target, mod.value, mod.op)
-                    elif mod.op == "grant":
-                        self.grant(mod.value)
-                    else:
-                        raise ValueError("Modifier operation is invalid")
+                LiveCharacter._apply_modifiers(self, item_obj.modifiers)
                 
 
     
