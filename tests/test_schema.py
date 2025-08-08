@@ -48,10 +48,10 @@ def test_character_and_related_models_and_hydrate():
         features=[],
         inventory=[],
         classes=[class_entry],
-        rollables={"action": "1d20", "bonus_action": 5},
+        rollables={"action": {"base": "1d20"}, "bonus_action": {"base": 5}},
     )
-    assert isinstance(char.actions, Rollable)
-    assert isinstance(char.bonus_actions, Rollable)
+    assert isinstance(char.actions["base"], Rollable)
+    assert isinstance(char.bonus_actions["base"], Rollable)
     assert char.classes[0].level == 1
 
     cls = Class(hit_die=8, features={1: [uuid4()]}, subclasses=[])
