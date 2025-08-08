@@ -128,13 +128,13 @@ def test_load_spellcasting():
         duration="Instantaneous",
         description="A bolt of fire",
     )
-    spell_obj = GameObject(name="Fire Bolt", type="spell", data=spell.dict())
+    spell_obj = GameObject(name="Fire Bolt", type="spell", data=spell.model_dump())
 
     sc = Spellcasting(ability="int", spell_list=[spell_obj.id], slots={1: {1: 2}})
-    sc_obj = GameObject(name="Wizard Spellcasting", type="spellcasting", data=sc.dict())
+    sc_obj = GameObject(name="Wizard Spellcasting", type="spellcasting", data=sc.model_dump())
 
     cls_model = Class(hit_die=6, features={}, subclasses=[], spellcasting=sc_obj.id)
-    cls_obj = GameObject(name="Wizard", type="class", data=cls_model.dict())
+    cls_obj = GameObject(name="Wizard", type="class", data=cls_model.model_dump())
 
     char_class = CharacterClass(class_id=cls_obj.id, level=1)
     character = Character(
@@ -148,7 +148,7 @@ def test_load_spellcasting():
         inventory=[],
         classes=[char_class],
     )
-    char_obj = GameObject(name="Hero", type="character", data=character.dict())
+    char_obj = GameObject(name="Hero", type="character", data=character.model_dump())
 
     objects = {
         cls_obj.id: cls_obj,
