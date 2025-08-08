@@ -11,11 +11,8 @@ from store.game_obj import GameObject
 def setup_db(tmp_path, monkeypatch):
     db_file = tmp_path / "test.db"
     monkeypatch.setattr(dao, "DB", str(db_file))
+    # Establish a connection to trigger schema creation.
     conn = dao.get_db_connection()
-    conn.execute(
-        "CREATE TABLE game_objects (id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL, data TEXT NOT NULL)"
-    )
-    conn.commit()
     conn.close()
     sqlite3.register_adapter(dict, lambda d: json.dumps(d))
 

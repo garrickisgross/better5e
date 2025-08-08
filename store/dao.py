@@ -1,16 +1,27 @@
 import sqlite3
 import json
 from uuid import UUID
+from pathlib import Path
 
 from store.game_obj import GameObject
 from schema.factory import hydrate
 
 DB = "better5e_v1.db"
 
-def get_db_connection():
-    """Create a new database connection."""
+
+def _ensure_schema(conn: sqlite3.Connection) -> None:
+    """Initialize the database schema if it does not already exist."""
+    startup_sql = Path(__file__).with_name("startup.sql")
+    if startup_sql.exists():
+        with startup_sql.open("r", encoding="utf-8") as f:
+            conn.executescript(f.read())
+
+
+def get_db_connection() -> sqlite3.Connection:
+    """Create a new database connection and ensure the schema exists."""
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
+    _ensure_schema(conn)
     return conn
 
 
