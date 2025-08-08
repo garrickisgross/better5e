@@ -1,7 +1,6 @@
 import sqlite3
 import json
 from uuid import UUID
-from typing import List
 
 from store.game_obj import GameObject
 from schema.factory import hydrate
@@ -14,6 +13,19 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+
+def _row_to_game_object(row: sqlite3.Row) -> GameObject:
+    """Convert a raw database row into a validated ``GameObject``."""
+    gobj = GameObject(
+        id=UUID(row["id"]),
+        name=row["name"],
+        type=row["type"],
+        data=json.loads(row["data"]),
+    )
+    # Ensure the stored data conforms to the declared schema.
+    hydrate(gobj)
+    return gobj
+
 def get_game_object_by_id(object_id: UUID) -> GameObject: 
     """Retrieve a game object by its ID."""
     with get_db_connection() as conn:
@@ -21,39 +33,16 @@ def get_game_object_by_id(object_id: UUID) -> GameObject:
         cursor.execute("SELECT * FROM game_objects WHERE id = ?", (str(object_id),))
         row = cursor.fetchone()
         if row:
-            gobj = GameObject(
-                id=UUID(row['id']),
-                name=row['name'],
-                type=row['type'],
-                data=json.loads(row['data'])
-            )
-            # Validate the stored data against the schema for its type.
-            # This will raise `ValidationError` if the payload cannot be
-            # hydrated into a concrete model, ensuring that callers are made
-            # aware of malformed records.
-            hydrate(gobj)
-            return gobj
-        else:
-            raise ValueError(f"GameObject with ID {object_id} not found.")
+            return _row_to_game_object(row)
+        raise ValueError(f"GameObject with ID {object_id} not found.")
         
-def get_all_by_type(object_type: str) -> List[GameObject]:
+def get_all_by_type(object_type: str) -> list[GameObject]:
     """Retrieve all game objects of a specific type."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM game_objects WHERE type = ?", (object_type,))
         rows = cursor.fetchall()
-        objects: List[GameObject] = []
-        for row in rows:
-            gobj = GameObject(
-                id=UUID(row['id']),
-                name=row['name'],
-                type=row['type'],
-                data=json.loads(row['data'])
-            )
-            # Ensure each object is valid for its declared type.
-            hydrate(gobj)
-            objects.append(gobj)
-        return objects
+        return [_row_to_game_object(row) for row in rows]
     
 def insert_game_object(game_object: GameObject) -> None:
     """Insert a new game object into the database."""
@@ -95,7 +84,7 @@ class GameObjectDAO:
         """Retrieve a game object by its ID."""
         return get_game_object_by_id(object_id)
     
-    def get_all_by_type(self, object_type: str) -> List[GameObject]:
+    def get_all_by_type(self, object_type: str) -> list[GameObject]:
         """Retrieve all game objects of a specific type."""
         return get_all_by_type(object_type)
     
