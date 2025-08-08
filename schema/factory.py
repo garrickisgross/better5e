@@ -5,13 +5,15 @@ from schema.class_ import Class
 from schema.subclass import Subclass
 from schema.spell import Spell
 from schema.spellcasting import Spellcasting
+from schema.background import Background
+from schema.race import Race
 
 TYPE_MAP = {
     "character": Character,
     "class": Class,
     "subclass": Subclass,
-    "race": None,
-    "background": None,
+    "background": Background,
+    "race": Race,
     "feature": Feature,
     "item": None,
     "spell": Spell,

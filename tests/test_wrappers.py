@@ -12,6 +12,7 @@ from schema.class_ import Class
 from schema.character import Character, CharacterClass
 from store.game_obj import GameObject
 from schema.factory import hydrate
+from store.game_obj import GameObject
 
 
 class DummyGameObject:
@@ -61,6 +62,8 @@ def test_set_data_success_and_process_change():
     assert game_obj.data["obj"].val == 9
     lo.set_data("obj.inner.val", 4, "set")
     assert game_obj.data["obj"].inner.val == 4
+    lo.set_data("obj.val", 1, "add")
+    assert game_obj.data["obj"].val == 10
 
 
 def test_set_data_errors():
@@ -73,6 +76,12 @@ def test_set_data_errors():
         lo.set_data("obj.missing.attr", 1, "set")
     with pytest.raises(AttributeError):
         lo.set_data("obj.missing", 1, "set")
+
+
+def test_set_data_unsupported_op():
+    lo, _ = create_live_object()
+    with pytest.raises(ValueError):
+        lo.set_data("obj.val", 1, "mul")
 
 
 def test_livecharacter_init_and_load_features(monkeypatch):
@@ -158,3 +167,93 @@ def test_load_spellcasting():
     cw.LiveCharacter.load_spellcasting(dummy)
     assert "Wizard" in dummy.data.spellcasting
     assert dummy.spells["Wizard"][0].description == "A bolt of fire"
+
+def test_livecharacter_apply_background():
+    set_mod = Modifier(target="stats.hp", op="set", value=1)
+    add_mod = Modifier(target="stats.hp", op="add", value=2)
+    grant_mod = Modifier(target="", op="grant", value=uuid4())
+    bad_mod = SimpleNamespace(target="", op="oops", value=0)
+
+    good_bg = GameObject(
+        name="acolyte",
+        type="background",
+        data={"description": "d", "modifiers": [set_mod, add_mod, grant_mod]},
+    )
+    bad_bg = GameObject(
+        name="acolyte",
+        type="background",
+        data={"description": "d", "modifiers": [bad_mod]},
+    )
+
+    class DummyLC:
+        def __init__(self, bg_obj):
+            self.dao = SimpleNamespace(get_by_id=lambda _id: bg_obj)
+            self.data = SimpleNamespace(background=uuid4())
+            self.set_calls = []
+            self.grants = []
+
+def test_load_features_includes_race(monkeypatch):
+    set_mod = Modifier(target="stats.hp", op="set", value=1)
+    race_mod = Modifier(target="stats.hp", op="add", value=2)
+    feat_obj = SimpleNamespace(modifiers=[set_mod])
+    race_obj = SimpleNamespace(features=["feat"], modifiers=[race_mod])
+
+    class DummyDAO:
+        def get_by_id(self, id):
+            return {"feat": feat_obj, "race": race_obj}[id]
+
+    class DummyLC:
+        def __init__(self):
+            self.features = []
+            self.set_calls = []
+            self.grants = []
+            self.dao = DummyDAO()
+            self.data = SimpleNamespace(features=[], race="race")
+
+
+        def set_data(self, t, v, op):
+            self.set_calls.append((t, v, op))
+
+        def grant(self, value):
+            self.grants.append(value)
+
+    dummy = DummyLC(good_bg)
+    cw.LiveCharacter.apply_background(dummy)
+    assert dummy.set_calls[0] == ("stats.hp", 1, "set")
+    assert dummy.set_calls[1] == ("stats.hp", 2, "add")
+    assert dummy.grants == [grant_mod.value]
+
+    dummy_bad = DummyLC(bad_bg)
+    with pytest.raises(ValueError):
+        cw.LiveCharacter.apply_background(dummy_bad)
+        def grant(self, v):
+            self.grants.append(v)
+
+    monkeypatch.setattr(cw, "hydrate", lambda x: x)
+    dummy = DummyLC()
+    dummy._load_race = types.MethodType(cw.LiveCharacter._load_race, dummy)
+    cw.LiveCharacter.load_features(dummy)
+    assert dummy.features == [feat_obj]
+    assert ("stats.hp", 1, "set") in dummy.set_calls
+    assert ("stats.hp", 2, "add") in dummy.set_calls
+
+    
+def test_livecharacter_init_feature_ids(monkeypatch):
+    feature_id = uuid4()
+
+    class DummyDAO:
+        def __init__(self):
+            self.updated = None
+        def update(self, obj):
+            self.updated = obj
+        def get_by_id(self, fid):
+            assert fid == feature_id
+            return DummyGameObject(id=fid, name="feat", type="feature", data={})
+
+    monkeypatch.setattr(live_object, "GameObjectDAO", lambda: DummyDAO())
+    monkeypatch.setattr(live_object, "hydrate", lambda g: SimpleNamespace(features=[feature_id]))
+    monkeypatch.setattr(cw, "hydrate", lambda g: SimpleNamespace(modifiers=[]))
+
+    char_obj = DummyGameObject(id=uuid4(), name="char", type="character", data={"features": [feature_id]})
+    lc = cw.LiveCharacter(char_obj)
+    assert len(lc.features) == 1
