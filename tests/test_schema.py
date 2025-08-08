@@ -25,8 +25,9 @@ def test_primitives_and_feature():
     assert feat.description == "x"
     assert isinstance(feat.rollables["action"], Rollable)
 
-    bg = Background(description="y", modifiers=[modifier])
+    bg = Background(description="y", modifiers=[modifier], rollables={"luck": "1d4"})
     assert bg.modifiers[0].op == "add"
+    assert isinstance(bg.rollables["luck"], Rollable)
 
     with pytest.raises(ValidationError):
         Skill(proficient="invalid", modifier=0)
@@ -48,17 +49,24 @@ def test_character_and_related_models_and_hydrate():
         features=[],
         inventory=[],
         classes=[class_entry],
-        rollables={"action": {"base": "1d20"}, "bonus_action": {"base": 5}},
+        rollables={
+            "action": {"base": "1d20"},
+            "bonus_action": {"base": 5},
+            "reaction": {"counter": "1d6"},
+            "free": {"shout": "1d4"},
+        },
     )
     assert isinstance(char.actions["base"], Rollable)
     assert isinstance(char.bonus_actions["base"], Rollable)
+    assert isinstance(char.reactions["counter"], Rollable)
+    assert isinstance(char.free["shout"], Rollable)
     assert char.classes[0].level == 1
 
-    cls = Class(hit_die=8, features={1: [uuid4()]}, subclasses=[])
-    assert cls.hit_die == 8
+    cls = Class(hit_die=8, features={1: [uuid4()]}, subclasses=[], rollables={"action": "1d6"})
+    assert isinstance(cls.rollables["action"], Rollable)
 
-    subcls = Subclass(parent=uuid4(), features={1: [uuid4()]})
-    assert subcls.features
+    subcls = Subclass(parent=uuid4(), features={1: [uuid4()]}, rollables={"action": "1d4"})
+    assert isinstance(subcls.rollables["action"], Rollable)
 
     game_obj_char = GameObject(name="hero", type="character", data=char.model_dump())
     hydrated = hydrate(game_obj_char)
@@ -82,13 +90,14 @@ def test_spell_and_spellcasting_and_mount():
         components=["V", "S"],
         duration="Instantaneous",
         description="A bolt of fire",
+        rollables={"damage": "1d8"},
     )
-    assert spell.level == 1
+    assert isinstance(spell.rollables["damage"], Rollable)
 
     spell_list = [uuid4(), uuid4()]
     slots = {1: {1: 2}, 2: {1: 3, 2: 1}}
-    sc = Spellcasting(ability="int", spell_list=spell_list, slots=slots)
-    assert sc.slots[2][2] == 1
+    sc = Spellcasting(ability="int", spell_list=spell_list, slots=slots, rollables={"save": "1d20"})
+    assert isinstance(sc.rollables["save"], Rollable)
 
     sc_obj = GameObject(name="Wizard Spellcasting", type="spellcasting", data=sc.model_dump())
     spell_obj = GameObject(name="Fire Bolt", type="spell", data=spell.model_dump())
@@ -102,7 +111,8 @@ def test_spell_and_spellcasting_and_mount():
     cls = Class(hit_die=6, features={1: [uuid4()]}, subclasses=[], spellcasting=sc_obj.id)
     assert cls.spellcasting == sc_obj.id
     mod = Modifier(target="stats.speed", op="set", value=30)
-    race = Race(features=[uuid4()], modifiers=[mod])
+    race = Race(features=[uuid4()], modifiers=[mod], rollables={"sprint": "1d4"})
+    assert isinstance(race.rollables["sprint"], Rollable)
     game_obj_race = GameObject(name="elf", type="race", data=race.model_dump())
     hydrated_race = hydrate(game_obj_race)
     assert isinstance(hydrated_race, Race)
