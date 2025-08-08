@@ -1,6 +1,7 @@
 import types
 from types import SimpleNamespace
 from uuid import uuid4
+from collections import deque
 import pytest
 
 from wrappers import live_object
@@ -386,3 +387,24 @@ def test_grant_duplicates_and_missing_dao(monkeypatch):
     dummy.grant(item_id)
     assert dummy.raw.data["inventory"] == [item_id]
     assert dummy.process_count == 2
+
+
+def test_apply_modifier_queues_grant():
+    mod = SimpleNamespace(op="grant", value=uuid4())
+    q = deque()
+    seen = set()
+    cw.LiveCharacter._apply_modifier(SimpleNamespace(), mod, q, seen)
+    assert list(q) == [mod.value]
+
+
+def test_apply_modifier_grant_without_instance_method(monkeypatch):
+    captured = {}
+
+    def fake_grant(self, value):
+        captured["value"] = value
+
+    monkeypatch.setattr(cw.LiveCharacter, "grant", fake_grant)
+    dummy = SimpleNamespace(grant=None)
+    mod = SimpleNamespace(op="grant", value=uuid4())
+    cw.LiveCharacter._apply_modifier(dummy, mod)
+    assert captured["value"] == mod.value
