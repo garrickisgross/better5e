@@ -27,7 +27,6 @@ def test_character_level_sum():
         features=[],
         inventory=[],
         classes=[first, second],
-        spellcasting=None,
     )
 
     assert character.level == 5

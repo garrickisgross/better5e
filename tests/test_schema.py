@@ -7,6 +7,8 @@ from schema.feature import Feature
 from schema.character import Character, CharacterClass
 from schema.class_ import Class
 from schema.subclass import Subclass
+from schema.spell import Spell
+from schema.spellcasting import Spellcasting
 from schema.factory import hydrate
 from store.game_obj import GameObject
 
@@ -34,7 +36,6 @@ def test_character_and_related_models_and_hydrate():
         features=[],
         inventory=[],
         classes=[class_entry],
-        spellcasting=None,
     )
     assert char.classes[0].level == 1
 
@@ -51,3 +52,33 @@ def test_character_and_related_models_and_hydrate():
     unknown = GameObject(name="mystery", type="mystery", data={})
     with pytest.raises(ValueError):
         hydrate(unknown)
+
+
+def test_spell_and_spellcasting_and_mount():
+    spell = Spell(
+        level=1,
+        school="evocation",
+        casting_time="1 action",
+        range="60 feet",
+        components=["V", "S"],
+        duration="Instantaneous",
+        description="A bolt of fire",
+    )
+    assert spell.level == 1
+
+    spell_list = [uuid4(), uuid4()]
+    slots = {1: {1: 2}, 2: {1: 3, 2: 1}}
+    sc = Spellcasting(ability="int", spell_list=spell_list, slots=slots)
+    assert sc.slots[2][2] == 1
+
+    sc_obj = GameObject(name="Wizard Spellcasting", type="spellcasting", data=sc.dict())
+    spell_obj = GameObject(name="Fire Bolt", type="spell", data=spell.dict())
+
+    hydrated_sc = hydrate(sc_obj)
+    hydrated_spell = hydrate(spell_obj)
+
+    assert isinstance(hydrated_sc, Spellcasting)
+    assert isinstance(hydrated_spell, Spell)
+
+    cls = Class(hit_die=6, features={1: [uuid4()]}, subclasses=[], spellcasting=sc_obj.id)
+    assert cls.spellcasting == sc_obj.id

@@ -1,8 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from uuid import UUID
-from typing import Optional, Any
+from typing import Optional
 
 from schema.primitives import AbilityScore, Skill
+from schema.spellcasting import Spellcasting
 
 
 class CharacterClass(BaseModel):
@@ -19,7 +20,7 @@ class Character(BaseModel):
     features: list[UUID]
     inventory: list[UUID]
     classes: list[CharacterClass]
-    spellcasting: Optional[dict[Any, Any]]  # change when we work on spellcasting object
+    spellcasting: dict[str, Spellcasting] = Field(default_factory=dict)
 
     @property
     def level(self) -> int:
