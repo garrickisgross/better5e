@@ -1,0 +1,53 @@
+from better5e.character import Character
+from better5e.game_objects import Feature, Race
+from better5e.modifiers import Modifier, ModifierOperation
+from better5e.live_character import LiveCharacter
+
+
+class DummyDAO:
+    def __init__(self, objects):
+        self.objects = {obj.uuid: obj for obj in objects}
+
+    def load(self, obj_id):
+        return self.objects[obj_id]
+
+
+def test_live_character_initialization_and_grants():
+    granted = Feature(
+        name="Granted",
+        modifiers=[
+            Modifier(target="stats.strength", operation=ModifierOperation.ADD, value=1)
+        ],
+    )
+    race = Race(name="Race", grants=[granted.uuid])
+    base_feat = Feature(
+        name="Base",
+        modifiers=[
+            Modifier(target="stats.strength", operation=ModifierOperation.ADD, value=2)
+        ],
+    )
+    dao = DummyDAO([granted])
+    char = Character(name="Hero", race=race, features=[base_feat])
+    live = LiveCharacter(char, dao)
+    # granted feature should be present
+    assert any(f.uuid == granted.uuid for f in live.features)
+    # total strength: 10 base +2 from base_feat +1 from granted
+    assert live.get_stat("strength") == 13
+
+
+def test_live_character_grant_and_set_data():
+    feat = Feature(
+        name="DexFeat",
+        modifiers=[
+            Modifier(target="stats.dexterity", operation=ModifierOperation.ADD, value=1)
+        ],
+    )
+    dao = DummyDAO([feat])
+    live = LiveCharacter(Character(name="Hero"), dao)
+    live.grant(feat.uuid)
+    assert live.get_stat("dexterity") == 11
+    live.set_data("stats.dexterity", 14)
+    assert live.get_stat("dexterity") == 15
+    data = live.to_dict()
+    assert data["stats"]["dexterity"] == 14
+    assert "dao" not in data

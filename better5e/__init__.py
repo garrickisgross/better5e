@@ -14,6 +14,7 @@ from .game_objects import (
 )
 from .modifiers import Modifier, ModifierOperation
 from .rollable import Roll
+from .live_character import LiveCharacter
 
 __all__ = [
     "Character",
@@ -33,4 +34,5 @@ __all__ = [
     "Modifier",
     "ModifierOperation",
     "Roll",
+    "LiveCharacter",
 ]
