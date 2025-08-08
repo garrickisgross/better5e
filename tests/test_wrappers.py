@@ -106,6 +106,39 @@ def test_livecharacter_init_and_load_features(monkeypatch):
     cw.LiveCharacter.grant(dummy, uuid4())
 
 
+def test_load_features_includes_race(monkeypatch):
+    set_mod = Modifier(target="stats.hp", op="set", value=1)
+    race_mod = Modifier(target="stats.hp", op="add", value=2)
+    feat_obj = SimpleNamespace(modifiers=[set_mod])
+    race_obj = SimpleNamespace(features=["feat"], modifiers=[race_mod])
+
+    class DummyDAO:
+        def get_by_id(self, id):
+            return {"feat": feat_obj, "race": race_obj}[id]
+
+    class DummyLC:
+        def __init__(self):
+            self.features = []
+            self.set_calls = []
+            self.grants = []
+            self.dao = DummyDAO()
+            self.data = SimpleNamespace(features=[], race="race")
+
+        def set_data(self, t, v, op):
+            self.set_calls.append((t, v, op))
+
+        def grant(self, v):
+            self.grants.append(v)
+
+    monkeypatch.setattr(cw, "hydrate", lambda x: x)
+    dummy = DummyLC()
+    dummy._load_race = types.MethodType(cw.LiveCharacter._load_race, dummy)
+    cw.LiveCharacter.load_features(dummy)
+    assert dummy.features == [feat_obj]
+    assert ("stats.hp", 1, "set") in dummy.set_calls
+    assert ("stats.hp", 2, "add") in dummy.set_calls
+
+    
 def test_livecharacter_init_feature_ids(monkeypatch):
     feature_id = uuid4()
 
@@ -125,3 +158,4 @@ def test_livecharacter_init_feature_ids(monkeypatch):
     char_obj = DummyGameObject(id=uuid4(), name="char", type="character", data={"features": [feature_id]})
     lc = cw.LiveCharacter(char_obj)
     assert len(lc.features) == 1
+
