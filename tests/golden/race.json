@@ -1,0 +1,103 @@
+{
+  "steps": [
+    {
+      "fields": [
+        {
+          "key": "name",
+          "label": "Name",
+          "required": true,
+          "type": "text"
+        }
+      ],
+      "name": "core"
+    },
+    {
+      "fields": [
+        {
+          "choices": [
+            "tiny",
+            "small",
+            "medium",
+            "large"
+          ],
+          "key": "size",
+          "label": "Size",
+          "type": "select"
+        },
+        {
+          "key": "speed",
+          "label": "Speed",
+          "type": "number"
+        },
+        {
+          "key": "languages",
+          "label": "Languages",
+          "type": "multiselect"
+        },
+        {
+          "key": "traits",
+          "label": "Traits",
+          "type": "json"
+        }
+      ],
+      "name": "type_specific"
+    },
+    {
+      "fields": [
+        {
+          "key": "modifiers",
+          "label": "Modifiers",
+          "row": {
+            "condition": {
+              "label": "Condition",
+              "type": "text"
+            },
+            "operation": {
+              "choices": [
+                "add",
+                "multiply",
+                "set",
+                "grant"
+              ],
+              "label": "Operation",
+              "required": true,
+              "type": "select"
+            },
+            "stackable": {
+              "default": true,
+              "label": "Stackable",
+              "type": "boolean"
+            },
+            "target": {
+              "label": "Target",
+              "required": true,
+              "type": "text"
+            },
+            "value": {
+              "label": "Value",
+              "required": true,
+              "type": "text"
+            }
+          },
+          "type": "rows"
+        }
+      ],
+      "name": "modifiers"
+    },
+    {
+      "fields": [
+        {
+          "key": "grants",
+          "label": "Grants",
+          "type": "uuid_list"
+        }
+      ],
+      "name": "grants"
+    },
+    {
+      "fields": [],
+      "name": "review"
+    }
+  ],
+  "title": "Race Builder"
+}

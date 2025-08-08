@@ -1,201 +1,206 @@
-import pytest
+import json
 from uuid import UUID, uuid4
-from pathlib import Path
 
-from better5e.dao import FileDAO
-from better5e.wizard import GameObjectWizard
-from better5e.wizard import build_modifier
+import pytest
+from hypothesis import given, strategies as st
+
+from better5e.dao import GameObjectDAO
+from better5e.game_objects import Item
 from better5e.modifiers import ModifierOperation
-from better5e.game_objects import Feature, Item
+from better5e.wizard import GameObjectWizard, WizardError, validate_dice
 
 
-def make_wizard(tmp_path: Path) -> GameObjectWizard:
-    return GameObjectWizard(FileDAO(tmp_path))
+class DictDAO(GameObjectDAO):
+    def __init__(self):
+        self.storage = {}
+
+    def load(self, obj_id: UUID):
+        return self.storage[obj_id]
+
+    def save(self, obj):
+        self.storage[obj.uuid] = obj
 
 
-def test_form_spec_contains_core_and_type_specific_fields(tmp_path):
-    wiz = make_wizard(tmp_path)
-    spec = wiz.get_form_spec("feature")
-    core = spec["steps"][0]["fields"]
-    ts = spec["steps"][1]["fields"]
-    assert any(f["key"] == "name" for f in core)
-    assert any(f["key"] == "data.description" for f in ts)
+def new_wiz():
+    return GameObjectWizard(DictDAO())
 
 
-def test_build_feature_with_modifiers_and_grants_roundtrip_save(tmp_path):
-    wiz = make_wizard(tmp_path)
+def spec_path(name: str) -> str:
+    return f"tests/golden/{name}.json"
+
+
+def test_form_spec_golden():
+    wiz = new_wiz()
+    for obj_type in ["feature", "item", "spell", "race", "background", "class"]:
+        spec = wiz.get_form_spec(obj_type)
+        with open(spec_path(obj_type)) as f:
+            assert spec == json.load(f)
+
+
+def test_modifiers_validation_including_grant_uuid_coercion():
+    wiz = new_wiz()
     sid = wiz.start("feature")
-    wiz.apply(sid, {"name": "Sneak", "type": "feature"})
+    # core
+    wiz.apply(sid, {"name": "Bless"}, revision=0)
+    # type step with nothing
+    wiz.apply(sid, {}, revision=1)
+    gid = uuid4()
+    resp = wiz.apply(
+        sid,
+        {"modifiers": [{"target": "stats.str", "operation": "grant", "value": str(gid)}]},
+        revision=2,
+    )
+    session = wiz._sessions[sid]
+    assert session.modifiers[0]["value"] == [str(gid)]
+    wiz.apply(sid, {"grants": []}, revision=3)
+    obj = wiz.finalize(sid, save=False)
+    mod = obj["model"]["modifiers"][0]
+    assert mod["operation"] == ModifierOperation.GRANT.value
+    assert mod["value"] == [str(gid)]
+
+
+@given(
+    count=st.integers(min_value=1, max_value=5),
+    sides=st.sampled_from([4, 6, 8, 10, 12, 20, 100]),
+    mod=st.integers(min_value=-5, max_value=5),
+)
+def test_dice_validation_property_based(count, sides, mod):
+    expr = f"{count}d{sides}{mod:+d}" if mod else f"{count}d{sides}"
+    validate_dice(expr)
+
+
+def test_finalize_materializes_correct_subclass_and_persists():
+    wiz = new_wiz()
+    sid_feat = wiz.start("feature")
+    wiz.apply(sid_feat, {"name": "Darkvision"}, revision=0)
+    wiz.apply(sid_feat, {}, revision=1)
+    wiz.apply(sid_feat, {"modifiers": []}, revision=2)
+    wiz.apply(sid_feat, {"grants": []}, revision=3)
+    grant_obj = wiz.finalize(sid_feat, save=True)
+
+    sid = wiz.start("item")
+    wiz.apply(sid, {"name": "Axe"}, revision=0)
     wiz.apply(
         sid,
-        {
-            "data": {
-                "description": "Sneaky",
-                "activation": "action",
-                "uses": {"max": 1, "recharge": "short_rest"},
-            }
-        },
+        {"category": "weapon", "damage": "1d8", "damage_type": "slashing"},
+        revision=1,
     )
-    grant_id = uuid4()
-    wiz.apply(
-        sid,
-        {
-            "modifiers": [
-                {"target": "stats.dexterity", "operation": "add", "value": 2},
-                {"target": "stats.strength", "operation": "grant", "value": str(grant_id)},
-            ]
-        },
-    )
-    wiz.apply(sid, {"grants": []})
+    wiz.apply(sid, {"modifiers": []}, revision=2)
+    wiz.apply(sid, {"grants": [grant_obj["uuid"]]}, revision=3)
     preview = wiz.preview(sid)
-    assert preview["modifiers"] == 2
+    assert preview["modifier_count"] == 0
     result = wiz.finalize(sid, save=True)
     dao = wiz.dao
     loaded = dao.load(UUID(result["uuid"]))
-    assert isinstance(loaded, Feature)
-    assert loaded.name == "Sneak"
-
-
-def test_spell_level_validation_and_dice_validation(tmp_path):
-    wiz = make_wizard(tmp_path)
-    sid = wiz.start("spell")
-    wiz.apply(sid, {"name": "Firebolt", "type": "spell"})
-    with pytest.raises(ValueError):
-        wiz.apply(sid, {"data": {"level": 10}})
-    with pytest.raises(ValueError):
-        wiz.apply(
-            sid,
-            {
-                "data": {
-                    "level": 1,
-                    "school": "evocation",
-                    "casting_time": "1 action",
-                    "range": "60 ft",
-                    "duration": "instant", "components": [],
-                    "attack_save": "none", "damage": "bad"
-                }
-            },
-        )
-
-
-def test_finalize_materializes_correct_subclass_and_persists(tmp_path):
-    wiz = make_wizard(tmp_path)
-    sid = wiz.start("item")
-    wiz.apply(sid, {"name": "Sword", "type": "item"})
-    wiz.apply(
-        sid,
-        {
-            "data": {
-                "category": "weapon",
-                "damage": "1d6",
-                "damage_type": "slashing",
-            }
-        },
-    )
-    wiz.apply(sid, {"modifiers": []})
-    wiz.apply(sid, {"grants": []})
-    wiz.apply(sid, {})  # review step
-    res = wiz.preview(sid)
-    assert res["damage"] == "1d6"
-    fin = wiz.finalize(sid)
-    loaded = wiz.dao.load(UUID(fin["uuid"]))
     assert isinstance(loaded, Item)
+    assert loaded.data["damage"] == "1d8"
 
 
-def test_preview_returns_expected_summary(tmp_path):
-    wiz = make_wizard(tmp_path)
-    sid = wiz.start("spell")
-    wiz.apply(sid, {"name": "Magic", "type": "spell"})
-    wiz.apply(
-        sid,
-        {
-            "data": {
-                "level": 1,
-                "school": "evocation",
-                "casting_time": "1 action",
-                "range": "30 ft",
-                "duration": "instant",
-                "components": [],
-                "attack_save": "none",
-            }
-        },
-    )
-    mod = {"target": "roll", "operation": "add", "value": 1}
-    grant = str(uuid4())
-    wiz.apply(sid, {"modifiers": [mod]})
-    wiz.apply(sid, {"grants": [grant]})
-    prev = wiz.preview(sid)
-    assert prev["level"] == 1
-    assert prev["school"] == "evocation"
-    assert prev["modifiers"] == 1
-    assert prev["grants"] == [grant]
-    wiz.cancel(sid)
-
-
-def test_apply_core_validation(tmp_path):
-    wiz = make_wizard(tmp_path)
-    sid = wiz.start("feature")
-    with pytest.raises(ValueError):
-        wiz.apply(sid, {})
-    with pytest.raises(ValueError):
-        wiz.apply(sid, {"name": "A", "type": "item"})
-
-
-def test_type_data_validation_errors(tmp_path):
-    wiz = make_wizard(tmp_path)
-    sid = wiz.start("feature")
-    wiz.apply(sid, {"name": "Feat", "type": "feature"})
-    with pytest.raises(ValueError):
-        wiz.apply(sid, {"data": {"uses": {"max": -1}}})
-    sid2 = wiz.start("spell")
-    wiz.apply(sid2, {"name": "Bolt", "type": "spell"})
-    with pytest.raises(ValueError):
-        wiz.apply(sid2, {"data": {"level": 1, "damage_type": "fire"}})
-
-
-def test_start_template_and_finalize_without_save(tmp_path):
-    ids = [str(uuid4()), str(uuid4())]
-    template = {"name": "Temp", "modifiers": [{"target": "roll", "operation": "grant", "value": ids}]}
-    wiz = make_wizard(tmp_path)
-    sid = wiz.start("feature", template=template)
-    prev = wiz.preview(sid)
-    assert prev["name"] == "Temp"
-    res = wiz.finalize(sid, save=False)
-    path = tmp_path / "feature" / f"{res['uuid']}.json"
-    assert not path.exists()
-
-
-def test_preview_other_types_and_item_highlight(tmp_path):
-    wiz = make_wizard(tmp_path)
-    # item preview
-    sid_item = wiz.start("item")
-    wiz.apply(sid_item, {"name": "Hammer", "type": "item"})
-    wiz.apply(sid_item, {"data": {"category": "tool"}})
-    wiz.apply(sid_item, {"modifiers": []})
-    wiz.apply(sid_item, {"grants": []})
-    wiz.apply(sid_item, {})  # review branch
-    prev_item = wiz.preview(sid_item)
-    assert prev_item["category"] == "tool"
-    # race preview to hit default branch
-    sid_race = wiz.start("race")
-    wiz.apply(sid_race, {"name": "Elf", "type": "race"})
-    wiz.apply(sid_race, {"data": {"size": "medium", "speed": 30, "languages": [], "traits": []}})
-    wiz.apply(sid_race, {"modifiers": []})
-    wiz.apply(sid_race, {"grants": []})
-    wiz.apply(sid_race, {})
-    prev_race = wiz.preview(sid_race)
-    assert prev_race["name"] == "Elf"
-    assert "category" not in prev_race and "level" not in prev_race
-
-
-def test_build_modifier_multi_grant():
-    ids = [str(uuid4()), str(uuid4())]
-    mod = build_modifier({"target": "roll", "operation": "grant", "value": ids})
-    assert isinstance(mod.value, list) and len(mod.value) == 2
-
-
-def test_finalize_incomplete_session(tmp_path):
-    wiz = make_wizard(tmp_path)
+def test_edit_existing_roundtrip_update():
+    wiz = new_wiz()
     sid = wiz.start("item")
-    with pytest.raises(ValueError):
-        wiz.finalize(sid)
+    wiz.apply(sid, {"name": "Sword"}, revision=0)
+    wiz.apply(sid, {"category": "weapon", "damage": "1d8", "damage_type": "slashing"}, revision=1)
+    wiz.apply(sid, {"modifiers": []}, revision=2)
+    wiz.apply(sid, {"grants": []}, revision=3)
+    obj = wiz.finalize(sid, save=True)
+    oid = UUID(obj["uuid"])
+    # load existing and change name
+    sid2 = wiz.load_existing(oid)
+    wiz.apply(sid2, {"name": "Great Sword"}, revision=0)
+    wiz.apply(sid2, {"category": "weapon", "damage": "1d8", "damage_type": "slashing"}, revision=1)
+    wiz.apply(sid2, {"modifiers": []}, revision=2)
+    wiz.apply(sid2, {"grants": []}, revision=3)
+    final = wiz.finalize(sid2, save=True)
+    assert final["uuid"] == obj["uuid"]
+    assert wiz.dao.load(oid).name == "Great Sword"
+
+
+def test_idempotent_apply_does_not_duplicate_entries():
+    wiz = new_wiz()
+    sid = wiz.start("item")
+    resp1 = wiz.apply(sid, {"name": "Hammer"}, revision=0)
+    resp2 = wiz.apply(sid, {"name": "Hammer"}, revision=0)
+    assert resp1 == resp2
+    assert wiz._sessions[sid].step_index == 1
+    wiz.apply(sid, {"category": "weapon", "damage": "1d4", "damage_type": "bludgeoning"}, revision=1)
+    wiz.apply(sid, {"modifiers": []}, revision=2)
+    wiz.apply(sid, {"grants": []}, revision=3)
+    wiz.finalize(sid, save=False)
+
+
+def test_validation_errors():
+    wiz = new_wiz()
+    sid = wiz.start("item")
+    with pytest.raises(WizardError):
+        wiz.apply(sid, {"unknown": 1}, revision=0)
+    with pytest.raises(WizardError):
+        wiz.apply(sid, {})
+    with pytest.raises(WizardError):
+        wiz.apply(sid, {}, revision=0)
+    wiz.apply(sid, {"name": "Bow"}, revision=0)
+    with pytest.raises(WizardError):
+        wiz.apply(sid, {"category": "weapon"}, revision=1)  # missing damage
+    with pytest.raises(WizardError):
+        wiz.apply(sid, {"category": "weapon", "damage": "1d3", "damage_type": "piercing"}, revision=1)
+    with pytest.raises(WizardError):
+        wiz.apply(sid, {"category": "weapon", "damage": "1d8"}, revision=1)
+    wiz.apply(sid, {"category": "weapon", "damage": "1d8", "damage_type": "piercing"}, revision=1)
+    with pytest.raises(WizardError):
+        wiz.apply(sid, {"modifiers": [{"target": "x", "operation": "add", "value": 1, "extra": 1}]}, revision=2)
+    with pytest.raises(WizardError):
+        wiz.apply(sid, {"modifiers": [{"target": "x", "operation": "bad", "value": 1}]}, revision=2)
+    wiz.apply(sid, {"modifiers": []}, revision=2)
+    with pytest.raises(WizardError):
+        wiz.apply(sid, {"grants": ["not-a-uuid"]}, revision=3)
+    good = str(uuid4())
+    wiz.apply(sid, {"grants": [good]}, revision=3)
+    with pytest.raises(WizardError):
+        wiz.apply(sid, {}, revision=5)  # revision mismatch
+    sid_fail = wiz.start("item")
+    with pytest.raises(WizardError):
+        wiz.finalize(sid_fail, save=False)
+
+    # feature uses.max negative
+    sid2 = wiz.start("feature")
+    wiz.apply(sid2, {"name": "Rage"}, revision=0)
+    with pytest.raises(WizardError):
+        wiz.apply(sid2, {"uses.max": -1}, revision=1)
+    wiz.preview(sid2)
+
+    # spell invalid components
+    sid3 = wiz.start("spell")
+    wiz.apply(sid3, {"name": "Fire"}, revision=0)
+    with pytest.raises(WizardError):
+        wiz.apply(sid3, {"level": 1, "components": ["X"]}, revision=1)
+    with pytest.raises(WizardError):
+        wiz.apply(sid3, {"level": 10}, revision=1)
+    wiz.cancel(sid3)
+
+    sid5 = wiz.start("spell")
+    wiz.apply(sid5, {"name": "Zap"}, revision=0)
+    with pytest.raises(WizardError):
+        wiz.apply(sid5, {"level": 0, "damage_type": "fire"}, revision=1)
+    wiz.cancel(sid5)
+
+    sid4 = wiz.start("spell")
+    wiz.apply(sid4, {"name": "Bolt"}, revision=0)
+    wiz.apply(sid4, {"level": 0, "damage": "1d8", "damage_type": "fire"}, revision=1)
+    wiz.preview(sid4)
+
+    err = WizardError("oops", "bad", field="x", detail={"a": 1})
+    assert err.to_dict()["field"] == "x"
+
+    # start with template
+    tmpl = {
+        "core": {"name": "Tmp"},
+        "data": {"category": "gear"},
+        "modifiers": [{"target": "x", "operation": "add", "value": 1}],
+        "grants": [good],
+    }
+    sid_t = wiz.start("item", template=tmpl)
+    assert wiz.preview(sid_t)["name"] == "Tmp"
+
+    # invalid dice syntax
+    with pytest.raises(WizardError):
+        validate_dice("bad")
