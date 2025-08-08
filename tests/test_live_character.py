@@ -68,3 +68,12 @@ def test_live_character_prevents_duplicate_grants_and_handles_cycles():
     assert live.name == "Warrior"
     assert f"set:name" in live.events
     assert live.get_modifier("strength") == 0
+
+
+def test_live_character_get_stat_branches():
+    grant_mod = Modifier(target="stats.strength", operation=ModifierOperation.GRANT, value="x")
+    other_mod = Modifier(target="stats.dexterity", operation=ModifierOperation.ADD, value=1)
+    feat = Feature(name="Feat", modifiers=[grant_mod, other_mod])
+    live = LiveCharacter(Character(name="Hero", features=[feat]), DummyDAO([]))
+    assert live.get_stat("strength") == 10
+    assert live.get_stat("constitution") == 10

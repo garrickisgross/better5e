@@ -46,3 +46,41 @@ This example matches the one in `examples.py` and can be run directly:
 ```bash
 python examples.py
 ```
+
+## Game Object Wizard
+
+The `GameObjectWizard` offers a step-based builder for creating game objects
+with type-aware forms. The snippet below shows building a simple weapon item:
+
+```python
+from pathlib import Path
+from better5e.dao import FileDAO
+from better5e.wizard import GameObjectWizard
+
+wiz = GameObjectWizard(FileDAO(Path("data")))
+sid = wiz.start("item")
+
+# core step
+wiz.apply(sid, {"name": "Longsword", "type": "item"})
+
+# type-specific fields
+wiz.apply(sid, {
+    "data": {
+        "category": "weapon",
+        "damage": "1d8",
+        "damage_type": "slashing",
+        "properties": ["versatile"],
+    }
+})
+
+# modifiers and grants steps (empty in this example)
+wiz.apply(sid, {"modifiers": []})
+wiz.apply(sid, {"grants": []})
+
+preview = wiz.preview(sid)
+result = wiz.finalize(sid, save=False)
+print(preview)
+print(result["model"]["name"])
+```
+
+Running this snippet prints a preview summary and the finalized object's name.

@@ -30,12 +30,19 @@ def test_roll_advantage_disadvantage(monkeypatch):
     monkeypatch.setattr(roll, "_roll_once", lambda: next(values))
     assert roll.evaluate() == 5
 
+    roll = Roll("1d20", advantage=True, disadvantage=True)
+    values = iter([2, 18])
+    monkeypatch.setattr(roll, "_roll_once", lambda: next(values))
+    assert roll.evaluate() == 18
+
 
 def test_roll_with_modifier(monkeypatch):
     roll = Roll("1d20")
     monkeypatch.setattr(roll, "_roll_once", lambda: 10)
     mod = Modifier(target="roll", operation=ModifierOperation.ADD, value=2)
     assert roll.evaluate([mod]) == 12
+    other = Modifier(target="other", operation=ModifierOperation.ADD, value=5)
+    assert roll.evaluate([other]) == 10
 
 def test_roll_once(monkeypatch):
     roll = Roll("2d4+1")
