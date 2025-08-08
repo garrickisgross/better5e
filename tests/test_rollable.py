@@ -55,3 +55,74 @@ def test_roll_with_character_modifier(monkeypatch):
     r = Rollable({"dice": "1d20", "modifier": "str"})
     monkeypatch.setattr(random, 'randint', lambda a, b: 10)
     assert r.roll(char) == 12
+
+
+def test_rollable_positional_and_keyword():
+    with pytest.raises(TypeError):
+        Rollable("1d6", modifier=2)
+
+
+def test_rollable_model_validate_and_reuse():
+    r = Rollable.model_validate("2d4+1")
+    r2 = Rollable(r)
+    assert r2.dice == r.dice
+
+
+def test_rollable_model_validator_direct():
+    assert Rollable._validate_before("1d4") == {"dice": "1d4", "modifier": 0}
+
+
+def test_rollable_numeric_string():
+    r = Rollable("7")
+    assert r.dice == "1d20" and r.modifier == 7
+
+
+def test_rollable_invalid_roll():
+    r = Rollable(dice="1f6")
+    with pytest.raises(ValueError):
+        r.roll()
+
+
+def test_rollable_modifier_requires_character():
+    r = Rollable(dice="1d20", modifier="str")
+    with pytest.raises(ValueError):
+        r.roll()
+
+
+def test_rollable_modifier_skill(monkeypatch):
+    class Dummy:
+        skills = {"stealth": type("Skill", (), {"modifier": 2})()}
+
+    r = Rollable(dice="1d20", modifier="stealth")
+    monkeypatch.setattr(random, 'randint', lambda a, b: 1)
+    assert r.roll(Dummy()) == 3
+
+
+def test_rollable_modifier_attribute(monkeypatch):
+    class Dummy:
+        ability_scores = {}
+        skills = {}
+        my_attr = 3
+
+    r = Rollable(dice="1d20", modifier="my_attr")
+    monkeypatch.setattr(random, 'randint', lambda a, b: 1)
+    assert r.roll(Dummy()) == 4
+
+
+def test_rollable_modifier_unknown(monkeypatch):
+    class Dummy:
+        ability_scores = {}
+        skills = {}
+
+    r = Rollable(dice="1d20", modifier="unknown")
+    monkeypatch.setattr(random, 'randint', lambda a, b: 1)
+    with pytest.raises(ValueError):
+        r.roll(Dummy())
+
+
+def test_rollable_modifier_type_error(monkeypatch):
+    r = Rollable("1d6")
+    r.__dict__["modifier"] = object()
+    monkeypatch.setattr(random, 'randint', lambda a, b: 1)
+    with pytest.raises(TypeError):
+        r.roll(object())
