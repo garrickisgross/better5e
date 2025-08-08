@@ -4,6 +4,7 @@ from pydantic import ValidationError
 
 from schema.primitives import AbilityScore, Skill, Modifier
 from schema.feature import Feature
+from schema.background import Background
 from schema.character import Character, CharacterClass
 from schema.class_ import Class
 from schema.subclass import Subclass
@@ -19,6 +20,9 @@ def test_primitives_and_feature():
     feat = Feature(description="x", modifiers=[modifier])
     assert feat.description == "x"
 
+    bg = Background(description="y", modifiers=[modifier])
+    assert bg.modifiers[0].op == "add"
+
     with pytest.raises(ValidationError):
         Skill(proficient="invalid", modifier=0)
 
@@ -27,12 +31,14 @@ def test_character_and_related_models_and_hydrate():
     ability_scores = {"str": {"proficient": True, "value": 10, "modifier": 0}}
     skills = {"acrobatics": {"proficient": "none", "modifier": 0}}
     class_entry = {"class_id": uuid4(), "level": 1}
+    background_id = uuid4()
     race_id = uuid4()
     char = Character(
         ac=10,
         ability_scores=ability_scores,
         proficiency_bonus=2,
         skills=skills,
+        background=background_id,
         race=race_id,
         features=[],
         inventory=[],
@@ -50,6 +56,10 @@ def test_character_and_related_models_and_hydrate():
     game_obj_char = GameObject(name="hero", type="character", data=char.dict())
     hydrated = hydrate(game_obj_char)
     assert isinstance(hydrated, Character)
+    assert hydrated.background == background_id
+
+    bg_obj = GameObject(name="acolyte", type="background", data={"description": "y", "modifiers": []})
+    assert isinstance(hydrate(bg_obj), Background)
     assert hydrated.race == race_id
 
     unknown = GameObject(name="mystery", type="mystery", data={})

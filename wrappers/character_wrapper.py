@@ -12,11 +12,20 @@ class LiveCharacter(LiveObject):
         # always invoked.
         builtins.super(LiveCharacter, self).__init__(game_obj)
         self.features: list = []
+        self.apply_background()
         self.load_features()
     
     def grant(self, id: UUID) -> None:
         pass
 
+    def apply_background(self) -> None:
+        background_id = getattr(getattr(self, "data", None), "background", None)
+        if not background_id:
+            return
+        background_obj = hydrate(self.dao.get_by_id(background_id))
+        for mod in background_obj.modifiers:
+          pass # fix this
+        
     def _load_race(self) -> None:
         data = getattr(self, "data", None)
         race_id = getattr(data, "race", None)
