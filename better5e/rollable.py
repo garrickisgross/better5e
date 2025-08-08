@@ -7,7 +7,7 @@ import random
 import re
 from typing import Iterable, List
 
-from .modifiers import Modifier
+from modifiers import Modifier
 
 
 def _parse_expression(expr: str) -> tuple[int, int, int]:

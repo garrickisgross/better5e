@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Dict, Type
 
-from .game_objects import (
+from game_objects import (
     Background,
     CharacterClass,
     Feature,

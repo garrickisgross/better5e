@@ -20,10 +20,10 @@ import re
 
 from pydantic import BaseModel, Field
 
-from .dao import GameObjectDAO
-from .factory import create_game_object
-from .modifiers import Modifier, ModifierOperation
-from .enums import AbilityScore, DamageType, Skill
+from dao import GameObjectDAO
+from factory import create_game_object
+from modifiers import Modifier, ModifierOperation
+from enums import AbilityScore, DamageType, Skill
 
 
 # ---------------------------------------------------------------------------

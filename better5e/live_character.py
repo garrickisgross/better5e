@@ -13,10 +13,10 @@ from uuid import UUID
 
 from pydantic import ConfigDict, Field
 
-from .character import Character
-from .dao import GameObjectDAO
-from .modifiers import ModifierOperation
-from .game_objects import GameObject
+from character import Character
+from dao import GameObjectDAO
+from modifiers import ModifierOperation
+from game_objects import GameObject
 
 
 class LiveCharacter(Character):

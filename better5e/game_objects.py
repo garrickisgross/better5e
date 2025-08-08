@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from .modifiers import Modifier
+from modifiers import Modifier
 
 
 class GameObject(BaseModel):

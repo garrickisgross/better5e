@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Optional
 from uuid import UUID
 
-from .factory import create_game_object
-from .game_objects import GameObject
+from factory import create_game_object
+from game_objects import GameObject
 
 
 class GameObjectDAO:

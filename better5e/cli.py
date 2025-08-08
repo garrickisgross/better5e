@@ -18,9 +18,9 @@ from pathlib import Path
 from typing import Any, Sequence
 from uuid import UUID
 
-from .dao import FileDAO, GameObjectDAO, SQLiteDAO
-from .factory import create_game_object
-from .wizard import GameObjectWizard, WizardError, validate_dice
+from dao import FileDAO, GameObjectDAO, SQLiteDAO
+from factory import create_game_object
+from wizard import GameObjectWizard, WizardError, validate_dice
 
 # ---------------------------------------------------------------------------
 # DAO factory

@@ -8,8 +8,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from .enums import AbilityScore
-from .game_objects import (
+from enums import AbilityScore
+from game_objects import (
     Background,
     CharacterClass,
     Feature,
@@ -18,7 +18,7 @@ from .game_objects import (
     Race,
     Spell,
 )
-from .modifiers import Modifier, ModifierOperation
+from modifiers import Modifier, ModifierOperation
 
 
 class Character(BaseModel):
