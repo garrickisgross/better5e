@@ -47,7 +47,7 @@ class FileDAO(GameObjectDAO):
     def save(self, obj: GameObject) -> None:
         path = self._path(obj)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(obj.json())
+        path.write_text(obj.model_dump_json())
 
 
 class SQLiteDAO(GameObjectDAO):
@@ -71,6 +71,6 @@ class SQLiteDAO(GameObjectDAO):
     def save(self, obj: GameObject) -> None:
         self.conn.execute(
             "REPLACE INTO game_objects (uuid, type, data) VALUES (?, ?, ?)",
-            (str(obj.uuid), obj.type, obj.json()),
+            (str(obj.uuid), obj.type, obj.model_dump_json()),
         )
         self.conn.commit()
