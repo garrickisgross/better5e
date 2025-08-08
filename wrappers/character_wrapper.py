@@ -2,6 +2,7 @@ from store.game_obj import GameObject
 from wrappers.live_object import LiveObject
 from schema.factory import hydrate
 from uuid import UUID
+from collections import deque
 import builtins
 
 class LiveCharacter(LiveObject):
@@ -18,9 +19,63 @@ class LiveCharacter(LiveObject):
         self.load_features()
         self.load_spellcasting()
         self.load_items()
-    
+
     def grant(self, id: UUID) -> None:
-        pass
+        # ``grant`` may be invoked in unit tests with incomplete dummy
+        # objects.  If the instance lacks a DAO, there is nothing we can do.
+        if not hasattr(self, "dao"):
+            return
+
+        # Utilize a FIFO queue to ensure breadth-first application of
+        # grants.  ``deque`` gives us ``popleft`` for efficient FIFO
+        # semantics.
+        queue: deque[UUID] = deque([id])
+        seen: set[UUID] = set()
+
+        while queue:
+            current_id = queue.popleft()
+            if current_id in seen:
+                continue
+            seen.add(current_id)
+
+            game_obj = self.dao.get_by_id(current_id)
+            hydrated = hydrate(game_obj)
+
+            obj_type = getattr(game_obj, "type", None)
+
+            if obj_type == "feature":
+                # Track the feature on the character and persist it to the
+                # raw data if not already present.
+                self.features.append(hydrated)
+                feats = self.raw.data.setdefault("features", [])
+                if current_id not in feats:
+                    feats.append(current_id)
+                    self.process_change()
+                modifiers = hydrated.modifiers
+            elif obj_type == "item":
+                # Add the item to the inventory and persist if new.
+                self.items.append(hydrated)
+                inv = self.raw.data.setdefault("inventory", [])
+                if current_id not in inv:
+                    inv.append(current_id)
+                    self.process_change()
+                # Only apply modifiers from equipped items, mirroring the
+                # behaviour of ``load_items``.
+                modifiers = hydrated.modifiers if getattr(hydrated, "equipped", False) else []
+            else:
+                # Unknown types may still have modifiers, so we attempt to
+                # process them generically.
+                modifiers = getattr(hydrated, "modifiers", [])
+
+            for mod in modifiers:
+                if mod.op in {"set", "add"}:
+                    self.set_data(mod.target, mod.value, mod.op)
+                elif mod.op == "grant":
+                    # Enqueue new grants for breadth-first processing.
+                    if mod.value not in seen:
+                        queue.append(mod.value)
+                else:
+                    raise ValueError("Modifier operation is invalid")
 
     def apply_background(self) -> None:
         background_id = getattr(getattr(self, "data", None), "background", None)
