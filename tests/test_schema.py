@@ -12,6 +12,7 @@ from schema.spell import Spell
 from schema.spellcasting import Spellcasting
 from schema.factory import hydrate
 from schema.race import Race
+from schema.item import Item
 from store.game_obj import GameObject
 
 def test_primitives_and_feature():
@@ -100,3 +101,25 @@ def test_spell_and_spellcasting_and_mount():
     game_obj_race = GameObject(name="elf", type="race", data=race.model_dump())
     hydrated_race = hydrate(game_obj_race)
     assert isinstance(hydrated_race, Race)
+
+
+def test_item_and_hydrate():
+    mod = Modifier(target="stats.hp", op="add", value=5)
+    item = Item(
+        category="weapon",
+        equipped=True,
+        modifiers=[mod],
+        attack_modifier=1,
+        damage_dice="1d6",
+        damage_modifier=2,
+    )
+    assert item.equipped
+    assert item.attack_modifier == 1
+    assert item.damage_dice == "1d6"
+    assert item.damage_modifier == 2
+    game_obj_item = GameObject(name="Sword", type="item", data=item.model_dump())
+    hydrated_item = hydrate(game_obj_item)
+    assert isinstance(hydrated_item, Item)
+    assert hydrated_item.attack_modifier == 1
+    assert hydrated_item.damage_dice == "1d6"
+    assert hydrated_item.damage_modifier == 2

@@ -13,9 +13,11 @@ class LiveCharacter(LiveObject):
         builtins.super(LiveCharacter, self).__init__(game_obj)
         self.features: list = []
         self.spells: dict = {}
+        self.items: list = []
         self.apply_background()
         self.load_features()
         self.load_spellcasting()
+        self.load_items()
     
     def grant(self, id: UUID) -> None:
         pass
@@ -86,6 +88,21 @@ class LiveCharacter(LiveObject):
             self.raw.data.setdefault("spellcasting", {}).update(spellcasting_map)
             self.process_change()
         self.spells = spells_map
+
+    def load_items(self) -> None:
+        data = getattr(self, "data", None)
+        self.items = []
+        for item_id in getattr(data, "inventory", []):
+            item_obj = hydrate(self.dao.get_by_id(item_id))
+            self.items.append(item_obj)
+            if getattr(item_obj, "equipped", False):
+                for mod in item_obj.modifiers:
+                    if mod.op in {"set", "add"}:
+                        self.set_data(mod.target, mod.value, mod.op)
+                    elif mod.op == "grant":
+                        self.grant(mod.value)
+                    else:
+                        raise ValueError("Modifier operation is invalid")
                 
 
     
