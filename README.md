@@ -47,7 +47,9 @@ A minimal command line interface is available for creating Better5e objects. Aft
 python -m cli.main
 ```
 
-Follow the prompts to create features, classes, subclasses, spellcasting, spells, items, and characters.
+Follow the prompts to create features, classes, subclasses, spellcasting, spells, items, and characters. When a field
+requires an existing object, use the built-in search to look up objects by name and select the desired entry instead of
+typing raw UUIDs.
 
 ## Running tests
 

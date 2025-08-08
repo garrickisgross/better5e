@@ -11,8 +11,45 @@ from schema.spell import Spell
 from schema.item import Item
 from schema.character import Character
 from schema.primitives import Modifier
+from store.dao import GameObjectDAO
 
 console = Console()
+dao = GameObjectDAO()
+
+
+def select_game_object(object_type: str, description: str) -> UUID:
+    """Search for an existing object by name and let the user select it."""
+    try:
+        objs = dao.get_all_by_type(object_type)
+    except Exception as e:  # pragma: no cover - interactive fallback
+        console.print(f"[red]Error retrieving {object_type}: {e}")
+        raise
+    if not objs:
+        raise ValueError(f"No {object_type} objects available")
+    while True:
+        search_key = Prompt.ask(f"Search for {description}")
+        matches = [o for o in objs if search_key.lower() in o.name.lower()]
+        if not matches:
+            console.print("No matches found. Try again.")
+            continue
+        for idx, obj in enumerate(matches, start=1):
+            console.print(f"{idx}. {obj.name}")
+        choice = IntPrompt.ask(
+            "Select item number", choices=[str(i) for i in range(1, len(matches) + 1)]
+        )
+        return matches[choice - 1].id
+
+
+def _modifier_value() -> int | UUID:
+    value_raw = Prompt.ask("Value")
+    try:
+        return int(value_raw)
+    except ValueError:
+        try:
+            return UUID(value_raw)
+        except ValueError:
+            obj_type = Prompt.ask("Object type to search")
+            return select_game_object(obj_type, obj_type)
 
 
 def create_feature() -> Feature:
@@ -23,11 +60,7 @@ def create_feature() -> Feature:
         console.print(f"Modifier {i + 1}")
         target = Prompt.ask("Target")
         op = Prompt.ask("Operation", choices=["add", "set", "grant"])
-        value_raw = Prompt.ask("Value")
-        try:
-            value: int | UUID = int(value_raw)
-        except ValueError:
-            value = UUID(value_raw)
+        value = _modifier_value()
         modifiers.append(Modifier(target=target, op=op, value=value))
     feat = Feature(description=description, modifiers=modifiers)
     console.print(feat.model_dump())
@@ -44,7 +77,7 @@ def create_class() -> Class:
 
 
 def create_subclass() -> Subclass:
-    parent_id = UUID(Prompt.ask("Parent class UUID"))
+    parent_id = select_game_object("class", "parent class")
     features: dict[int, list[UUID]] = {}
     sub = Subclass(parent=parent_id, features=features)
     console.print(sub.model_dump())
@@ -91,11 +124,7 @@ def create_item() -> Item:
         console.print(f"Modifier {i + 1}")
         target = Prompt.ask("Target")
         op = Prompt.ask("Operation", choices=["add", "set", "grant"])
-        value_raw = Prompt.ask("Value")
-        try:
-            value: int | UUID = int(value_raw)
-        except ValueError:
-            value = UUID(value_raw)
+        value = _modifier_value()
         modifiers.append(Modifier(target=target, op=op, value=value))
     item = Item(category=category, equipped=equipped, modifiers=modifiers)
     console.print(item.model_dump())
@@ -105,8 +134,8 @@ def create_item() -> Item:
 def create_character() -> Character:
     ac = IntPrompt.ask("Armor Class")
     pb = IntPrompt.ask("Proficiency bonus")
-    background = UUID(Prompt.ask("Background UUID"))
-    race = UUID(Prompt.ask("Race UUID"))
+    background = select_game_object("background", "background")
+    race = select_game_object("race", "race")
     char = Character(
         ac=ac,
         ability_scores={},
