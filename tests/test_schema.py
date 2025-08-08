@@ -13,6 +13,7 @@ from schema.spellcasting import Spellcasting
 from schema.factory import hydrate
 from schema.race import Race
 from schema.item import Item
+from schema.rollable import Rollable
 from store.game_obj import GameObject
 
 def test_primitives_and_feature():
@@ -20,8 +21,9 @@ def test_primitives_and_feature():
     assert ability.value == 15
     skill = Skill(proficient="expert", modifier=3)
     modifier = Modifier(target="stats.hp", op="add", value=5)
-    feat = Feature(description="x", modifiers=[modifier])
+    feat = Feature(description="x", modifiers=[modifier], rollables={"action": "1d20"})
     assert feat.description == "x"
+    assert isinstance(feat.rollables["action"], Rollable)
 
     bg = Background(description="y", modifiers=[modifier])
     assert bg.modifiers[0].op == "add"
@@ -46,7 +48,10 @@ def test_character_and_related_models_and_hydrate():
         features=[],
         inventory=[],
         classes=[class_entry],
+        rollables={"action": {"base": "1d20"}, "bonus_action": {"base": 5}},
     )
+    assert isinstance(char.actions["base"], Rollable)
+    assert isinstance(char.bonus_actions["base"], Rollable)
     assert char.classes[0].level == 1
 
     cls = Class(hit_die=8, features={1: [uuid4()]}, subclasses=[])
@@ -112,8 +117,10 @@ def test_item_and_hydrate():
         attack_modifier=1,
         damage_dice="1d6",
         damage_modifier=2,
+        rollables={"action": "1d6"},
     )
     assert item.equipped
+    assert isinstance(item.rollables["action"], Rollable)
     assert item.attack_modifier == 1
     assert item.damage_dice == "1d6"
     assert item.damage_modifier == 2
