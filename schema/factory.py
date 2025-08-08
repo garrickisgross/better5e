@@ -4,13 +4,15 @@ from schema.feature import Feature
 from schema.class_ import Class
 from schema.subclass import Subclass
 from schema.background import Background
+from schema.race import Race
+
 
 TYPE_MAP = {
     "character": Character,
     "class": Class,
     "subclass": Subclass,
-    "race": None,
     "background": Background,
+    "race": Race,
     "feature": Feature,
     "item": None,
     "spell": None,

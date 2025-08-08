@@ -17,6 +17,7 @@ class Character(BaseModel):
     proficiency_bonus: int
     skills: dict[str, Skill]
     background: UUID
+    race: UUID
     features: list[UUID]
     inventory: list[UUID]
     classes: list[CharacterClass]

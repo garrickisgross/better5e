@@ -24,6 +24,18 @@ class LiveCharacter(LiveObject):
             return
         background_obj = hydrate(self.dao.get_by_id(background_id))
         for mod in background_obj.modifiers:
+          pass # fix this
+        
+    def _load_race(self) -> None:
+        data = getattr(self, "data", None)
+        race_id = getattr(data, "race", None)
+        if not race_id:
+            return
+        race_obj = hydrate(self.dao.get_by_id(race_id))
+        for feature_id in race_obj.features:
+            feature_obj = hydrate(self.dao.get_by_id(feature_id))
+            self.features.append(feature_obj)
+        for mod in race_obj.modifiers:
             if mod.op in {"set", "add"}:
                 self.set_data(mod.target, mod.value, mod.op)
             elif mod.op == "grant":
@@ -33,11 +45,12 @@ class LiveCharacter(LiveObject):
 
     def load_features(self) -> None:
         if not getattr(self, "features", None):
-            feature_ids = getattr(getattr(self, "data", {}), "features", [])
+            data = getattr(self, "data", None)
             self.features = []
-            for feature_id in feature_ids:
+            for feature_id in getattr(data, "features", []):
                 feature_obj = hydrate(self.dao.get_by_id(feature_id))
                 self.features.append(feature_obj)
+            self._load_race()
         for feature_obj in self.features:
             for mod in feature_obj.modifiers:
                 if mod.op in {"set", "add"}:

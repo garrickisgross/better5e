@@ -25,6 +25,7 @@ def test_character_level_sum():
         proficiency_bonus=2,
         skills=skills,
         background=uuid4(),
+        race=uuid4(),
         features=[],
         inventory=[],
         classes=[first, second],

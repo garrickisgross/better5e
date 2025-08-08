@@ -9,6 +9,7 @@ from schema.character import Character, CharacterClass
 from schema.class_ import Class
 from schema.subclass import Subclass
 from schema.factory import hydrate
+from schema.race import Race
 from store.game_obj import GameObject
 
 def test_primitives_and_feature():
@@ -31,12 +32,14 @@ def test_character_and_related_models_and_hydrate():
     skills = {"acrobatics": {"proficient": "none", "modifier": 0}}
     class_entry = {"class_id": uuid4(), "level": 1}
     background_id = uuid4()
+    race_id = uuid4()
     char = Character(
         ac=10,
         ability_scores=ability_scores,
         proficiency_bonus=2,
         skills=skills,
         background=background_id,
+        race=race_id,
         features=[],
         inventory=[],
         classes=[class_entry],
@@ -57,7 +60,14 @@ def test_character_and_related_models_and_hydrate():
 
     bg_obj = GameObject(name="acolyte", type="background", data={"description": "y", "modifiers": []})
     assert isinstance(hydrate(bg_obj), Background)
+    assert hydrated.race == race_id
 
     unknown = GameObject(name="mystery", type="mystery", data={})
     with pytest.raises(ValueError):
         hydrate(unknown)
+
+    mod = Modifier(target="stats.speed", op="set", value=30)
+    race = Race(features=[uuid4()], modifiers=[mod])
+    game_obj_race = GameObject(name="elf", type="race", data=race.dict())
+    hydrated_race = hydrate(game_obj_race)
+    assert isinstance(hydrated_race, Race)
