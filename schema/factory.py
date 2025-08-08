@@ -1,11 +1,13 @@
 from store.game_obj import GameObject
 from schema.character import Character
 from schema.feature import Feature
+from schema.class_ import Class
+from schema.subclass import Subclass
 
 TYPE_MAP = {
     "character": Character,
-    "class": None,
-    "subclass": None,
+    "class": Class,
+    "subclass": Subclass,
     "race": None,
     "background": None,
     "feature": Feature,
@@ -20,3 +22,4 @@ def hydrate(game_object: GameObject):
     if not cls:
         raise ValueError(f"Unknown type: {game_object.type}")
     return cls.parse_obj(game_object.data)
+
