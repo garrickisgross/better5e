@@ -1,5 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
+from schema.rollable import Rollable
 
 class Spell(BaseModel):
     level: int
@@ -13,3 +14,4 @@ class Spell(BaseModel):
     ritual: bool = False
     concentration: bool = False
     materials: Optional[str] = None
+    rollables: dict[str, Rollable] = Field(default_factory=dict)
