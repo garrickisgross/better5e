@@ -136,7 +136,11 @@ def test_load_spellcasting():
     cls_model = Class(hit_die=6, features={}, subclasses=[], spellcasting=sc_obj.id)
     cls_obj = GameObject(name="Wizard", type="class", data=cls_model.model_dump())
 
+    cls_no_sc_model = Class(hit_die=8, features={}, subclasses=[], spellcasting=None)
+    cls_no_sc_obj = GameObject(name="Fighter", type="class", data=cls_no_sc_model.model_dump())
+
     char_class = CharacterClass(class_id=cls_obj.id, level=1)
+    char_class_no_sc = CharacterClass(class_id=cls_no_sc_obj.id, level=1)
     character = Character(
         ac=10,
         ability_scores={},
@@ -146,7 +150,7 @@ def test_load_spellcasting():
         race=uuid4(),
         features=[],
         inventory=[],
-        classes=[char_class],
+        classes=[char_class, char_class_no_sc],
     )
     char_obj = GameObject(name="Hero", type="character", data=character.model_dump())
 
@@ -154,6 +158,7 @@ def test_load_spellcasting():
         cls_obj.id: cls_obj,
         sc_obj.id: sc_obj,
         spell_obj.id: spell_obj,
+        cls_no_sc_obj.id: cls_no_sc_obj,
     }
     dummy = SimpleNamespace(
         dao=DummyDAO(objects),
@@ -171,6 +176,7 @@ def test_load_spellcasting():
     cw.LiveCharacter.load_spellcasting(dummy)
     assert "Wizard" in dummy.data.spellcasting
     assert dummy.spells["Wizard"][0].description == "A bolt of fire"
+    assert "Fighter" not in dummy.spells
 
 def test_livecharacter_apply_background(monkeypatch):
     set_mod = SimpleNamespace(target="stats.hp", op="set", value=1)
@@ -329,3 +335,54 @@ def test_livecharacter_init_feature_ids(monkeypatch):
     char_obj = DummyGameObject(id=uuid4(), name="char", type="character", data={"features": [feature_id]})
     lc = cw.LiveCharacter(char_obj)
     assert len(lc.features) == 1
+
+
+def test_grant_duplicates_and_missing_dao(monkeypatch):
+    feature_id = uuid4()
+    item_id = uuid4()
+
+    feature_obj = GameObject(id=feature_id, name="feat", type="feature", data={"modifiers": []})
+    item_obj = GameObject(id=item_id, name="item", type="item", data={"modifiers": [], "equipped": False})
+
+    class DummyDAO:
+        def __init__(self):
+            self.objects = {feature_id: feature_obj, item_id: item_obj}
+        def get_by_id(self, oid):
+            return self.objects[oid]
+
+    dummy = SimpleNamespace(
+        dao=DummyDAO(),
+        features=[],
+        items=[],
+        raw=SimpleNamespace(data={"features": [], "inventory": []}),
+        process_count=0,
+    )
+
+    def process_change(self):
+        dummy.process_count += 1
+
+    monkeypatch.setattr(cw, "hydrate", lambda g: SimpleNamespace(**g.data))
+
+    dummy.process_change = types.MethodType(process_change, dummy)
+    dummy.grant = types.MethodType(cw.LiveCharacter.grant, dummy)
+
+    # Grant without dao should be a no-op
+    no_dao = SimpleNamespace()
+    no_dao.grant = types.MethodType(cw.LiveCharacter.grant, no_dao)
+    no_dao.grant(feature_id)
+
+    # Grant feature twice to cover both branches
+    dummy.grant(feature_id)
+    assert dummy.raw.data["features"] == [feature_id]
+    assert dummy.process_count == 1
+    dummy.grant(feature_id)
+    assert dummy.raw.data["features"] == [feature_id]
+    assert dummy.process_count == 1
+
+    # Grant item twice to cover inventory branch and unequipped modifiers
+    dummy.grant(item_id)
+    assert dummy.raw.data["inventory"] == [item_id]
+    assert dummy.process_count == 2
+    dummy.grant(item_id)
+    assert dummy.raw.data["inventory"] == [item_id]
+    assert dummy.process_count == 2
