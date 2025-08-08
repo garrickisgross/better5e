@@ -82,6 +82,8 @@ def test_set_data_unsupported_op():
     lo, _ = create_live_object()
     with pytest.raises(ValueError):
         lo.set_data("obj.val", 1, "mul")
+    with pytest.raises(ValueError):
+        lo.set_data("stats.hp", 1, "mul")
 
 
 def test_livecharacter_init_and_load_features(monkeypatch):
@@ -140,6 +142,8 @@ def test_load_spellcasting():
         ability_scores={},
         proficiency_bonus=2,
         skills={},
+        background=uuid4(),
+        race=uuid4(),
         features=[],
         inventory=[],
         classes=[char_class],
@@ -168,22 +172,14 @@ def test_load_spellcasting():
     assert "Wizard" in dummy.data.spellcasting
     assert dummy.spells["Wizard"][0].description == "A bolt of fire"
 
-def test_livecharacter_apply_background():
-    set_mod = Modifier(target="stats.hp", op="set", value=1)
-    add_mod = Modifier(target="stats.hp", op="add", value=2)
-    grant_mod = Modifier(target="", op="grant", value=uuid4())
+def test_livecharacter_apply_background(monkeypatch):
+    set_mod = SimpleNamespace(target="stats.hp", op="set", value=1)
+    add_mod = SimpleNamespace(target="stats.hp", op="add", value=2)
+    grant_mod = SimpleNamespace(target="", op="grant", value=uuid4())
     bad_mod = SimpleNamespace(target="", op="oops", value=0)
 
-    good_bg = GameObject(
-        name="acolyte",
-        type="background",
-        data={"description": "d", "modifiers": [set_mod, add_mod, grant_mod]},
-    )
-    bad_bg = GameObject(
-        name="acolyte",
-        type="background",
-        data={"description": "d", "modifiers": [bad_mod]},
-    )
+    good_bg = SimpleNamespace(modifiers=[set_mod, add_mod, grant_mod])
+    bad_bg = SimpleNamespace(modifiers=[bad_mod])
 
     class DummyLC:
         def __init__(self, bg_obj):
@@ -192,11 +188,30 @@ def test_livecharacter_apply_background():
             self.set_calls = []
             self.grants = []
 
+        def set_data(self, target, value, op):
+            self.set_calls.append((target, value, op))
+
+        def grant(self, value):
+            self.grants.append(value)
+
+    monkeypatch.setattr(cw, "hydrate", lambda x: x)
+
+    dummy = DummyLC(good_bg)
+    cw.LiveCharacter.apply_background(dummy)
+    assert dummy.set_calls[0] == ("stats.hp", 1, "set")
+    assert dummy.set_calls[1] == ("stats.hp", 2, "add")
+    assert dummy.grants == [grant_mod.value]
+
+    dummy_bad = DummyLC(bad_bg)
+    with pytest.raises(ValueError):
+        cw.LiveCharacter.apply_background(dummy_bad)
+
 def test_load_features_includes_race(monkeypatch):
-    set_mod = Modifier(target="stats.hp", op="set", value=1)
-    race_mod = Modifier(target="stats.hp", op="add", value=2)
+    set_mod = SimpleNamespace(target="stats.hp", op="set", value=1)
+    race_mod = SimpleNamespace(target="stats.hp", op="add", value=2)
+    race_grant = SimpleNamespace(target="", op="grant", value=uuid4())
     feat_obj = SimpleNamespace(modifiers=[set_mod])
-    race_obj = SimpleNamespace(features=["feat"], modifiers=[race_mod])
+    race_obj = SimpleNamespace(features=["feat"], modifiers=[race_mod, race_grant])
 
     class DummyDAO:
         def get_by_id(self, id):
@@ -217,18 +232,6 @@ def test_load_features_includes_race(monkeypatch):
         def grant(self, value):
             self.grants.append(value)
 
-    dummy = DummyLC(good_bg)
-    cw.LiveCharacter.apply_background(dummy)
-    assert dummy.set_calls[0] == ("stats.hp", 1, "set")
-    assert dummy.set_calls[1] == ("stats.hp", 2, "add")
-    assert dummy.grants == [grant_mod.value]
-
-    dummy_bad = DummyLC(bad_bg)
-    with pytest.raises(ValueError):
-        cw.LiveCharacter.apply_background(dummy_bad)
-        def grant(self, v):
-            self.grants.append(v)
-
     monkeypatch.setattr(cw, "hydrate", lambda x: x)
     dummy = DummyLC()
     dummy._load_race = types.MethodType(cw.LiveCharacter._load_race, dummy)
@@ -236,6 +239,34 @@ def test_load_features_includes_race(monkeypatch):
     assert dummy.features == [feat_obj]
     assert ("stats.hp", 1, "set") in dummy.set_calls
     assert ("stats.hp", 2, "add") in dummy.set_calls
+    assert dummy.grants == [race_grant.value]
+
+
+def test_load_race_invalid_modifier(monkeypatch):
+    bad_mod = SimpleNamespace(target="", op="oops", value=0)
+    race_obj = SimpleNamespace(features=[], modifiers=[bad_mod])
+
+    class DummyDAO:
+        def get_by_id(self, _id):
+            return race_obj
+
+    class DummyLC:
+        def __init__(self):
+            self.features = []
+            self.set_calls = []
+            self.grants = []
+            self.dao = DummyDAO()
+            self.data = SimpleNamespace(race="race")
+
+        def set_data(self, t, v, op):
+            self.set_calls.append((t, v, op))
+
+        def grant(self, value):
+            self.grants.append(value)
+
+    monkeypatch.setattr(cw, "hydrate", lambda x: x)
+    with pytest.raises(ValueError):
+        cw.LiveCharacter._load_race(DummyLC())
 
     
 def test_livecharacter_init_feature_ids(monkeypatch):

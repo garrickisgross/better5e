@@ -26,7 +26,12 @@ class LiveCharacter(LiveObject):
             return
         background_obj = hydrate(self.dao.get_by_id(background_id))
         for mod in background_obj.modifiers:
-          pass # fix this
+            if mod.op in {"set", "add"}:
+                self.set_data(mod.target, mod.value, mod.op)
+            elif mod.op == "grant":
+                self.grant(mod.value)
+            else:
+                raise ValueError("Modifier operation is invalid")
         
     def _load_race(self) -> None:
         data = getattr(self, "data", None)
