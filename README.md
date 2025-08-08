@@ -17,9 +17,7 @@ The repository is not yet packaged for distribution. To experiment with it local
 ```bash
 git clone <repo>
 cd better5e
-pip install pydantic
-# Optional: run tests
-pip install pytest
+pip install -r requirements.txt
 ```
 
 You can then create and hydrate objects:
