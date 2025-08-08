@@ -11,9 +11,14 @@ from schema.spell import Spell
 from schema.spellcasting import Spellcasting
 from schema.class_ import Class
 from schema.character import Character, CharacterClass
+from schema.feature import Feature
+from schema.item import Item
+from schema.background import Background
+from schema.race import Race
 from store.game_obj import GameObject
 from schema.factory import hydrate
 from store.game_obj import GameObject
+import random
 
 
 class DummyGameObject:
@@ -316,7 +321,54 @@ def test_load_items(monkeypatch):
     with pytest.raises(ValueError):
         cw.LiveCharacter.load_items(dummy_bad)
 
-    
+
+def test_livecharacter_rollables(monkeypatch):
+    feature_id = uuid4()
+    item_id = uuid4()
+    bg_id = uuid4()
+    race_id = uuid4()
+
+    feature = Feature(description="f", modifiers=[], rollables={"action": "1d6"})
+    item = Item(
+        category="weapon",
+        equipped=True,
+        modifiers=[],
+        attack_modifier=0,
+        damage_dice="1d4",
+        damage_modifier=0,
+        rollables={"bonus_action": "1d4"},
+    )
+    background = Background(description="bg", modifiers=[], rollables={})
+    race = Race(features=[], modifiers=[], rollables={})
+    feature_obj = GameObject(id=feature_id, name="FeatRoll", type="feature", data=feature.model_dump())
+    item_obj = GameObject(id=item_id, name="Sword", type="item", data=item.model_dump())
+    bg_obj = GameObject(id=bg_id, name="Acolyte", type="background", data=background.model_dump())
+    race_obj = GameObject(id=race_id, name="Elf", type="race", data=race.model_dump())
+
+    char = Character(
+        ac=10,
+        ability_scores={},
+        proficiency_bonus=2,
+        skills={},
+        background=bg_id,
+        race=race_id,
+        features=[feature_id],
+        inventory=[item_id],
+        classes=[],
+        rollables={},
+    )
+    char_obj = GameObject(name="Hero", type="character", data=char.model_dump())
+
+    objects = {feature_id: feature_obj, item_id: item_obj, bg_id: bg_obj, race_id: race_obj}
+
+    monkeypatch.setattr(live_object, "GameObjectDAO", lambda: DummyDAO(objects))
+    seq = iter([3, 2])
+    monkeypatch.setattr(random, "randint", lambda a, b: next(seq))
+    lc = cw.LiveCharacter(char_obj)
+    assert lc.rollables["action"]["FeatRoll"].roll(lc) == 3
+    assert lc.rollables["bonus_action"]["Sword"].roll(lc) == 2
+
+
 def test_livecharacter_init_feature_ids(monkeypatch):
     feature_id = uuid4()
 
