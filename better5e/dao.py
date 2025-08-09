@@ -43,14 +43,12 @@ class GameDAO:
 class SQLite3DAO(GameDAO):
 
     def __init__(self):
-        self.conn = sqlite3.connect(db_name)
-        
         #execute startup scripts in order
+        self.conn = sqlite3.connect(db_name)
         self.conn.execute("PRAGMA journal_mode=WAL;")
         self.conn.execute("PRAGMA foreign_keys=ON;")
         self.conn.execute(create_query)
         self.conn.execute(index_on_kind)
-
         self.conn.commit()
 
 
