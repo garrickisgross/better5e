@@ -1,1 +1,0 @@
-{"uuid":"942520f3-64c1-45d2-a4f4-0a704734b4ac","name":"Longsword","type":"item","data":{"category":"weapon","weight":15,"value":20,"properties":["two_handed"],"damage":"2d8","damage_type":"slashing","ac_base":10,"stealth_disadvantage":"False"},"modifiers":[],"grants":[]}
