@@ -2,22 +2,44 @@ from pydantic import BaseModel, Field
 from typing import Literal, Any, Optional, Union
 from uuid import UUID, uuid4
 
+
 class Modifier(BaseModel):
     target: str
-    op: Literal["add", "set", "grant", "return"]
-    value: Union[int, UUID]
+    op: Literal["add", "set", "get"]
+    value: int
+
+class Grant(BaseModel):
+    choice: int
+    options: list[UUID]
 
 class Rollable(BaseModel):
-    num_dice: int
+    num: int
     sides: int
-    modifier: Modifier
+    modifiers: Optional[list[Modifier]] = None # really modifier should only 'get' a value from the character sheet here. Find a way to validate that. 
 
+class Action(BaseModel):
+    type: Literal["action", "bonus_action", "reaction", "passive", "free"]
+    roll: Optional[Rollable] = None
 
-class GameObject(BaseModel):
+class Resource(BaseModel):
+    uses_max: int
+    uses_current: int
+    actions: Optional[list[Action]] = []
+
+class GameObj(BaseModel):
     id: UUID = Field(default_factory=uuid4)
-    type: Literal["feature", "class", "subclass", "item"]
-    data: dict[str, Any] = Field(default_factory=dict)
-    modifiers: list[Modifier] = Field(default_factory=list)
-    grants: list[UUID] = Field(default_factory=list)
-    actions: list[dict[str, Optional[Rollable]]] = Field(default_factory=list)
+    name: str
+    desc: str
+    kind: str
+    modifiers: Optional[list[Modifier]] = []
+    grants: Optional[list[Grant]] = []
+    actions: Optional[list[Action]] = []
+    resources: Optional[list[Resource]] = []
+
+
+
+
+
+
+
     
