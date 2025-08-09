@@ -26,7 +26,3 @@ pytest --cov=better5e --cov-report=term-missing
 ```
 
 The project includes a small example test ensuring that the DAO round-trips data correctly while achieving full code coverage.
-
-## License
-
-This project is released under the MIT License.
