@@ -40,6 +40,12 @@ class Spellcasting(Base):
     spells_known_per_level: dict[int, int] # num spell slots known
     spell_list: list[UUID]
 
+class Spell(Base):
+    kind: Literal["spell"] = "spell"
+    components: list[str] | None = None
+
+
+
 class ItemBase(Base):
     value: int
     weight: int
@@ -58,4 +64,4 @@ class Armor(ItemBase):
     max_dex_bonus: int
 
 
-AnyGameObj = Annotated[Union[Feature, Weapon, Spellcasting, Consumable, Armor], Field(discriminator='kind')]
+AnyGameObj = Annotated[Union[Spell, Feature, Weapon, Spellcasting, Consumable, Armor], Field(discriminator='kind')]
