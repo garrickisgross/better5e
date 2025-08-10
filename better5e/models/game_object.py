@@ -44,8 +44,6 @@ class Spell(Base):
     kind: Literal["spell"] = "spell"
     components: list[str] | None = None
 
-
-
 class ItemBase(Base):
     value: int
     weight: int
