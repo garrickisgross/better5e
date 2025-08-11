@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout
-from better5e.UI.app import App
+from better5e.UI.core.app import App
 
 class BasePage(QWidget):
     def __init__(self, app: App, title: str):
