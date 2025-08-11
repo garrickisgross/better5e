@@ -1,2 +1,0 @@
-#TODO Live Character Object. 
-
