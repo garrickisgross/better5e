@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from uuid import uuid4
 
@@ -35,3 +35,26 @@ def test_dao_round_trip(tmp_path):
 
     # unknown id returns None
     assert dao.load_by_id(uuid4()) is None
+
+
+def test_dao_update_and_singleton(tmp_path):
+    """Saving the same object twice updates the record and DAO is a singleton."""
+    sqlite_dao.SingletonMeta._instances = {}
+    sqlite_dao.DAO.db_name = tmp_path / "test.db"
+
+    dao1 = sqlite_dao.DAO()
+    dao2 = sqlite_dao.DAO()
+    assert dao1 is dao2  # singleton behaviour
+
+    feature = go.Feature(name="Feat", desc="a")
+    dao1.save(feature)
+
+    # update description and resave
+    feature.desc = "updated"
+    dao1.save(feature)
+
+    loaded = dao1.load_by_id(feature.id)
+    assert loaded.desc == "updated"
+
+    # loading by a kind with no entries returns an empty list
+    assert dao1.load_by_kind("spell") == []
