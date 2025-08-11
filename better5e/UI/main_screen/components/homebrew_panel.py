@@ -1,6 +1,8 @@
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton
 
+from better5e.UI.style.theme import add_shadow
+
 
 class HomebrewPanel(QWidget):
     """Vertical list of buttons for creating homebrew objects."""
@@ -26,6 +28,7 @@ class HomebrewPanel(QWidget):
         for kind in kinds:
             btn = QPushButton(f"Create {kind.title()}")
             btn.clicked.connect(lambda _=False, k=kind: self.openHomebrew.emit(k))
+            add_shadow(btn)
             layout.addWidget(btn)
 
         layout.addStretch()

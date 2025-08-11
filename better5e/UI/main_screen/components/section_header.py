@@ -9,6 +9,7 @@ class SectionHeader(QWidget):
 
     def __init__(self, title: str) -> None:
         super().__init__()
+        self.setProperty("class", "SectionHeader")
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
@@ -16,6 +17,7 @@ class SectionHeader(QWidget):
         layout.addStretch()
 
         button = QPushButton("See All >")
+        button.setProperty("class", "ghost")
         layout.addWidget(button)
         button.clicked.connect(self.seeAll.emit)
         self.button = button

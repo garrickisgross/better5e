@@ -33,6 +33,7 @@ class DiceOptionsPanel(QWidget):
         layout.addWidget(self.mod_spin)
 
         self.roll_btn = QPushButton("Roll")
+        self.roll_btn.setProperty("class", "primary")
         layout.addWidget(self.roll_btn)
 
         self.roll_btn.clicked.connect(self.roll)

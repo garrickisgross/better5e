@@ -1,0 +1,145 @@
+/* Core application styling */
+
+QMainWindow, QWidget {
+    background-color: $bg;
+    color: $text;
+    font-family: $font_family;
+    font-size: 13px;
+}
+
+/* Card container */
+QFrame#Card {
+    background-color: $surface;
+    border: 1px solid $border;
+    border-radius: ${radius_md}px;
+    padding: ${space_lg}px;
+    transition: background 0.2s, border 0.2s;
+}
+QFrame#Card:hover {
+    background-color: $surfaceAlt;
+    border: 1px solid $accent;
+}
+
+/* Buttons */
+QPushButton {
+    border-radius: ${radius_md}px;
+    padding: ${space_sm}px ${space_md}px;
+    border: 1px solid $border;
+    background-color: $surfaceAlt;
+    color: $text;
+}
+QPushButton:hover {
+    background-color: $surface;
+}
+QPushButton:pressed {
+    background-color: $surfaceAlt;
+}
+QPushButton:disabled {
+    color: $mutedText;
+    background-color: $surface;
+    border-color: $border;
+}
+
+QPushButton[class="primary"] {
+    background-color: $accent;
+    color: #ffffff;
+    border: none;
+}
+QPushButton[class="primary"]:hover {
+    background-color: $accentHover;
+}
+QPushButton[class="primary"]:pressed {
+    background-color: $accentHover;
+}
+
+QPushButton[class="secondary"] {
+    background-color: $surfaceAlt;
+    border: 1px solid $border;
+}
+
+QPushButton[class="ghost"] {
+    background-color: transparent;
+    border: none;
+    color: $accent;
+    padding: 0;
+}
+QPushButton[class="ghost"]:hover {
+    color: $accentHover;
+    text-decoration: underline;
+}
+
+/* Inputs */
+QLineEdit, QSpinBox, QComboBox {
+    background-color: $surface;
+    border: 1px solid $border;
+    border-radius: ${radius_md}px;
+    padding: ${space_sm}px;
+    selection-background-color: $accent;
+    selection-color: #ffffff;
+}
+QLineEdit:focus, QSpinBox:focus, QComboBox:focus {
+    border: 1px solid $accent;
+    outline: 2px solid rgba($accent_rgb, 0.6);
+}
+
+/* Lists and scroll areas */
+QListWidget, QListView, QScrollArea {
+    background-color: $surface;
+    border: 1px solid $border;
+    border-radius: ${radius_md}px;
+}
+QListWidget::item, QListView::item {
+    padding: ${space_sm}px;
+    border-radius: ${radius_sm}px;
+}
+QListWidget::item:selected, QListView::item:selected {
+    background-color: $accent;
+    color: #ffffff;
+}
+QListWidget::item:hover, QListView::item:hover {
+    background-color: $surfaceAlt;
+}
+QListWidget::item:alternate, QListView::item:alternate {
+    background-color: $surfaceAlt;
+}
+
+/* Scrollbars */
+QScrollBar:vertical {
+    background: $surface;
+    width: 10px;
+    margin: 0;
+}
+QScrollBar::handle:vertical {
+    background: $border;
+    border-radius: 5px;
+}
+QScrollBar::handle:vertical:hover {
+    background: $accent;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0;
+    subcontrol-origin: margin;
+}
+
+/* Section headers */
+[class="SectionHeader"] QLabel {
+    font-size: 18px;
+    font-weight: bold;
+    color: $text;
+}
+[class="SectionHeader"] QPushButton {
+    qproperty-flat: true;
+}
+
+/* QGroupBox styling */
+QGroupBox {
+    border: 1px solid $border;
+    border-radius: ${radius_md}px;
+    margin-top: ${space_md}px;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 ${space_sm}px;
+    color: $mutedText;
+}
