@@ -1,0 +1,2 @@
+[run]
+omit = better5e/tests/*

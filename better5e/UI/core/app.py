@@ -1,22 +1,24 @@
-from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QStackedWidget
+from typing import Callable, Union
 
-from typing import Union, Callable
+from PyQt6.QtWidgets import QApplication, QMainWindow, QStackedWidget, QWidget
 
-WidgetFactory = Callable[['App'], QWidget]
+WidgetFactory = Callable[["App"], QWidget]
+
 
 class App:
+    """Simple stack-based application window."""
+
     def __init__(self, app: QApplication, main: Union[QWidget, WidgetFactory]):
         self.app = app
         self.stack: list[QWidget] = []
         self.window = QMainWindow()
         self.window.setWindowTitle("better5e")
-        self.window.resize(520,320)
+        self.window.resize(520, 320)
 
         self._stacked = QStackedWidget()
         self.window.setCentralWidget(self._stacked)
 
         first = main(self) if callable(main) else main
-
         self.push(first)
         self.window.show()
 
@@ -38,10 +40,11 @@ class App:
     def _add_if_needed(self, widget: QWidget) -> None:
         if self._stacked.indexOf(widget) == -1:
             self._stacked.addWidget(widget)
-    
-    def _update_title(self):
+
+    def _update_title(self) -> None:
         name = type(self.stack[-1]).__name__ if self.stack else "better5e"
         self.window.setWindowTitle(f"better5e - {name}")
 
     def run(self) -> int:
-        self.app.exec()
+        """Start the Qt event loop."""
+        return self.app.exec()
