@@ -19,6 +19,9 @@ from PyQt6.QtWidgets import (
 from better5e.UI.main_screen.components.die_button import DieButton
 
 
+DICE_SIDES = [2, 4, 6, 8, 10, 12, 20, 100]
+
+
 class ModifierControl(QWidget):
     """Numeric modifier widget with +/− buttons."""
 
@@ -89,17 +92,18 @@ class DiceOptionsPanel(QWidget):
         root.setSpacing(12)
 
         grid = QGridLayout()
-        grid.setSpacing(6)
+        grid.setHorizontalSpacing(12)
+        grid.setVerticalSpacing(12)
         root.addLayout(grid)
 
-        self.dice: Dict[int, DieButton] = {}
-        order = [4, 6, 8, 10, 12, 20, 100]
-        positions = [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2)]
-        for pos, sides in zip(positions, order):
+        self.die_buttons: dict[int, DieButton] = {}
+        for i, sides in enumerate(DICE_SIDES):
             btn = DieButton(sides)
+            btn.setToolTip("Coin flip (d2)" if sides == 2 else f"d{sides}")
             btn.countChanged.connect(self._update_roll_enabled)
-            grid.addWidget(btn, *pos)
-            self.dice[sides] = btn
+            row, col = divmod(i, 4)
+            grid.addWidget(btn, row, col)
+            self.die_buttons[sides] = btn
 
         self.mod_ctrl = ModifierControl()
         root.addWidget(self.mod_ctrl)
@@ -132,24 +136,24 @@ class DiceOptionsPanel(QWidget):
 
     # utilities ----------------------------------------------------------
     def _update_roll_enabled(self, *_: int) -> None:
-        total = sum(btn.count for btn in self.dice.values())
+        total = sum(btn.count for btn in self.die_buttons.values())
         self.roll_btn.setEnabled(total > 0)
 
     def reset(self) -> None:
-        for btn in self.dice.values():
+        for btn in self.die_buttons.values():
             btn.count = 0
         self.mod_ctrl.setValue(0)
         self._update_roll_enabled()
         self.resetRequested.emit()
 
     def roll(self) -> None:
-        dice = {sides: btn.count for sides, btn in self.dice.items() if btn.count}
+        dice = {sides: btn.count for sides, btn in self.die_buttons.items() if btn.count}
         if not dice:
             return
         self.rollRequested.emit(dice, self.mod_ctrl.value)
 
     def state(self) -> Tuple[Dict[int, int], int]:
-        dice = {sides: btn.count for sides, btn in self.dice.items() if btn.count}
+        dice = {sides: btn.count for sides, btn in self.die_buttons.items() if btn.count}
         return dice, self.mod_ctrl.value
 
     def get_notation(self) -> str:

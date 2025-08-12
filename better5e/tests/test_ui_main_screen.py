@@ -50,8 +50,8 @@ def test_dice_roll_updates_history(qapp, monkeypatch):
         history.add_entry(f"{notation} = {total} ({', '.join(map(str, rolls))})")
 
     dice.rollRequested.connect(handler)
-    dice.dice[4].count = 2
-    dice.dice[6].count = 1
+    dice.die_buttons[4].count = 2
+    dice.die_buttons[6].count = 1
     dice.mod_ctrl.setValue(3)
     seq = iter([1, 2, 5])
     monkeypatch.setattr(random, "randint", lambda a, b: next(seq))
@@ -159,11 +159,11 @@ def test_main_screen_signal_propagation(qapp, monkeypatch):
     # roll wiring
     seq = iter([4, 3])
     monkeypatch.setattr(random, "randint", lambda a, b: next(seq))
-    screen.dice_panel.dice[6].count = 1
+    screen.dice_panel.die_buttons[6].count = 1
     screen.dice_panel.mod_ctrl.setValue(0)
     screen.dice_panel.roll()
-    screen.dice_panel.dice[6].count = 0
-    screen.dice_panel.dice[4].count = 1
+    screen.dice_panel.die_buttons[6].count = 0
+    screen.dice_panel.die_buttons[4].count = 1
     screen.dice_panel.mod_ctrl.setValue(2)
     screen.dice_panel.roll()
     assert screen.roll_history.count() == 2

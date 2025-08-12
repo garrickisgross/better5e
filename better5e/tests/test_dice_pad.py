@@ -99,7 +99,7 @@ def test_modifier_control(qapp):
 def test_notation_and_state(qapp):
     panel = DiceOptionsPanel()
     assert not panel.roll_btn.isEnabled()
-    panel.dice[8].count = 2
+    panel.die_buttons[8].count = 2
     panel.mod_ctrl.setValue(-5)
     assert panel.roll_btn.isEnabled()
     assert panel.get_notation() == "2d8 - 5"
