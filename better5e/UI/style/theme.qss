@@ -81,6 +81,12 @@ QPushButton[class="secondary"] {
     background-color: $surfaceAlt;
     border: 1px solid $border;
 }
+QPushButton[class="secondary"]:hover {
+    background-color: $surface;
+}
+QPushButton[class="secondary"]:pressed {
+    background-color: $surfaceAlt;
+}
 
 QPushButton[class="ghost"] {
     background-color: transparent;
