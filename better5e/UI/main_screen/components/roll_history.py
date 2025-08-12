@@ -14,6 +14,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QMenu,
+    QAbstractItemView,
 )
 
 from better5e.UI.style.theme import add_shadow
@@ -77,16 +78,26 @@ class RollCard(QWidget):
 
 
 class RollHistoryPanel(QListWidget):
-    """List widget showing past dice rolls."""
+    """A bottom-anchored feed of roll cards."""
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.setSpacing(8)
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setVerticalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setSpacing(10)
         self.setAlternatingRowColors(False)
         self.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self._show_context_menu)
         self.itemDoubleClicked.connect(self._reroll_item)
+
+        self._stick_bottom: bool = True
+        sb = self.verticalScrollBar()
+        sb.valueChanged.connect(self._on_scroll_value_changed)
+        sb.rangeChanged.connect(self._maybe_snap_to_bottom)
+        self.itemSelectionChanged.connect(
+            lambda: setattr(self, "_stick_bottom", self._is_at_bottom() and not self.selectedItems())
+        )
 
     def _parse_notation(self, notation: str) -> tuple[dict[int, int], int]:
         dice: dict[int, int] = {}
@@ -103,8 +114,19 @@ class RollHistoryPanel(QListWidget):
                 mod += int(part)
         return dice, mod
 
+    # ---------- public API ----------
+    def add_roll_card(self, card_widget: QWidget, data: dict | None = None) -> None:
+        """Append a roll card at the bottom."""
+        item = QListWidgetItem()
+        item.setSizeHint(card_widget.sizeHint())
+        if data is not None:
+            item.setData(Qt.ItemDataRole.UserRole, data)
+        self.addItem(item)
+        self.setItemWidget(item, card_widget)
+        # rangeChanged will fire -> _maybe_snap_to_bottom handles scroll
+
     def add_entry(self, text: str) -> None:
-        """Append a roll result to the list."""
+        """Parse a result string and append it to the list."""
         text = text.strip()
         if " = " not in text or "(" not in text or not text.endswith(")"):
             return
@@ -124,21 +146,21 @@ class RollHistoryPanel(QListWidget):
 
         add_shadow(card, blur=18, y=3)
 
-        item = QListWidgetItem()
-        item.setSizeHint(QSize(0, 72))
-        item.setData(Qt.ItemDataRole.UserRole, {
+        data = {
             "notation": notation_part,
             "total": total_i,
             "rolls": rolls,
             "mod": mod,
             "dice": dice_map,
-        })
-        self.addItem(item)
-        self.setItemWidget(item, card)
+        }
+        self.add_roll_card(card, data)
 
-    def clear_history(self) -> None:
-        """Remove all roll entries."""
+    def clearHistory(self) -> None:
+        """Remove all roll entries and reset scroll anchoring."""
         self.clear()
+        self._stick_bottom = True
+        # After first paint, stick to bottom
+        self._maybe_snap_to_bottom(0, self.verticalScrollBar().maximum())
 
     # context menu ---------------------------------------------------------
     def _show_context_menu(self, pos: QPoint) -> None:
@@ -155,7 +177,7 @@ class RollHistoryPanel(QListWidget):
             row = self.row(item)
             self.takeItem(row)
         elif action == clear_action:
-            self.clear_history()
+            self.clearHistory()
 
     def _copy_item(self, item: QListWidgetItem) -> None:
         data = item.data(Qt.ItemDataRole.UserRole)
@@ -173,3 +195,19 @@ class RollHistoryPanel(QListWidget):
         total = sum(rolls) + mod
         text = f"{data['notation']} = {total} ({', '.join(map(str, rolls))})"
         self.add_entry(text)
+
+    # ---------- autoscroll internals ----------
+    def _is_at_bottom(self) -> bool:
+        sb = self.verticalScrollBar()
+        return sb.value() >= sb.maximum() - 2
+
+    def _on_scroll_value_changed(self, _value: int) -> None:
+        self._stick_bottom = self._is_at_bottom()
+
+    def _maybe_snap_to_bottom(self, _minv: int, maxv: int) -> None:
+        if self._stick_bottom:
+            self.verticalScrollBar().setValue(maxv)
+
+    def showEvent(self, e) -> None:  # pragma: no cover - Qt event
+        super().showEvent(e)
+        self._maybe_snap_to_bottom(0, self.verticalScrollBar().maximum())

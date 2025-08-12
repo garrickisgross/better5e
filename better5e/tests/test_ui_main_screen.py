@@ -62,8 +62,9 @@ def test_dice_roll_updates_history(qapp, monkeypatch):
     assert card.notation_label.text() == "2d4 + 1d6 + 3"
     assert card.total_label.text() == "11"
     assert [lab.text() for lab in card.roll_labels] == ["1", "2", "5"]
-    history.clear_history()
+    history.clearHistory()
     assert history.count() == 0
+    history._on_scroll_value_changed(0)
 
 
 def test_roll_history_context_and_reroll(qapp, monkeypatch):
@@ -167,6 +168,14 @@ def test_main_screen_signal_propagation(qapp, monkeypatch):
     screen.dice_panel.mod_ctrl.setValue(2)
     screen.dice_panel.roll()
     assert screen.roll_history.count() == 2
+
+    # explicit critical roll triggers crit property via _on_roll_requested
+    seq = iter([20])
+    monkeypatch.setattr(random, "randint", lambda a, b: next(seq))
+    screen._on_roll_requested({20: 1}, 0)
+    item = screen.roll_history.item(2)
+    card = screen.roll_history.itemWidget(item)
+    assert card.property("crit") is True
 
 
 def test_fmt_time_variants():
