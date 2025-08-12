@@ -10,7 +10,6 @@ from PyQt6.QtWidgets import (
     QFrame,
     QPushButton,
     QSizePolicy,
-    QSpacerItem,
 )
 from typing import TYPE_CHECKING
 
@@ -73,8 +72,8 @@ class MainScreen(BasePage):
         centerWidget.setObjectName("CenterPane")
         self.centerScroll.setWidget(centerWidget)
         centerCol = QVBoxLayout(centerWidget)
-        centerCol.setContentsMargins(8, 0, 8, 0)
-        centerCol.setSpacing(12)
+        centerCol.setContentsMargins(8, 8, 8, 8)
+        centerCol.setSpacing(18)
 
         # Characters section
         charactersSection = Section("My Characters")
@@ -100,10 +99,10 @@ class MainScreen(BasePage):
         self.campaigns_create.clicked.connect(self.createNewCampaign.emit)
         campaignsSection.body.addWidget(self.campaigns_create)
 
+        for sec in (charactersSection, campaignsSection):
+            sec.layout().setContentsMargins(0, 0, 0, 0)
+
         centerCol.addWidget(charactersSection)
-        centerCol.addItem(
-            QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-        )
         centerCol.addWidget(campaignsSection)
 
         # Right sidebar -------------------------------------------------------
