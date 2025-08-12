@@ -8,17 +8,14 @@ QMainWindow, QWidget {
 }
 
 /* Window + title bar */
-QMainWindow#FramelessMainWindow, QWidget#WindowContent { background: $bg; }
-
-QFrame#TitleBar {
-  background: $bg;              /* SAME as the app background */
-  border-bottom: 1px solid $border;
-}
+QFrame#TitleBar { background: $bg; border-bottom: none; }
+QWidget#WindowContent, QMainWindow#FramelessMainWindow { background: $bg; border: none; }
 QLabel#AppTitle {
-  font-size: 14px;
-  font-weight: 700;
   color: $text;
+  font-size: 18px;
+  font-weight: 700;
   letter-spacing: .02em;
+  padding-left: 0;
 }
 
 /* Window control buttons */
@@ -27,6 +24,9 @@ QPushButton[class~="winbtn"] {
   border-radius: 6px;
   background: transparent;
   color: $text;
+  font-size: 16px;
+  font-weight: 600;
+  padding-bottom: 0px;
 }
 QPushButton[class~="winbtn"]:hover { background: rgba(255,255,255,0.06); }
 QPushButton#WinBtnClose:hover { background: rgba(244, 63, 94, 0.25); }  /* soft red */
@@ -113,6 +113,14 @@ QListWidget, QListView, QScrollArea {
     border: 1px solid $border;
     border-radius: ${radius_md}px;
 }
+
+QScrollArea#CenterScroll,
+QScrollArea#CenterScroll QWidget#qt_scrollarea_viewport,
+QScrollArea#CenterScroll QWidget#qt_scrollarea_viewport > QWidget {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
 QListWidget::item {
     background: transparent;
     border: none;
@@ -142,35 +150,23 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     subcontrol-origin: margin;
 }
 
-/* Section headers */
-[class="SectionHeader"] QLabel {
-    font-size: 18px;
-    font-weight: bold;
-    color: $text;
-}
-[class="SectionHeader"] QPushButton {
-    qproperty-flat: true;
+/* Kill residual frames and backgrounds around panes */
+QWidget#LeftPane, QWidget#CenterPane, QWidget#RightPane { border: none; background: transparent; }
+QFrame[frameShape="4"], QFrame[frameShape="5"] { border: none; }
+
+
+/* Section container */
+QFrame#Section {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
-QLabel#SectionHeader {
-  font-size: 18px;
-  font-weight: 700;
-  color: $text;
-  margin-bottom: 4px;
-}
+/* Keep header looking like a header */
+QWidget#SectionHeader { background: transparent; }
+QLabel#SectionTitle { font-size: 20px; font-weight: 700; color: $text; }
 
-/* QGroupBox styling */
-QGroupBox {
-    border: 1px solid $border;
-    border-radius: ${radius_md}px;
-    margin-top: ${space_md}px;
-}
-QGroupBox::title {
-    subcontrol-origin: margin;
-    subcontrol-position: top left;
-    padding: 0 ${space_sm}px;
-    color: $mutedText;
-}
+QGroupBox { border: none; }
 
 /* Roll cards */
 QWidget#RollCard, QFrame#RollCard {

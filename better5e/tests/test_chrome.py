@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import QApplication, QWidget
 import pytest
 
 from better5e.UI.shell.chrome import FramelessMainWindow
+from better5e.UI.style.tokens import gutter
 
 
 @pytest.fixture(scope="session")
@@ -30,10 +31,16 @@ def test_chrome_basic_interactions(qapp, monkeypatch):
     win.set_content(new_content)
 
     tb = win.titleBar
+    assert tb.btnMin.size().width() == 42 and tb.btnMin.size().height() == 32
+    assert tb.btnMin.font().pixelSize() == 16
+    assert tb.title.font().pixelSize() == 18
+    assert tb.layout().contentsMargins().left() == gutter()
 
     tb.btnMin.click()
     tb.btnMax.click()
+    assert tb.btnMax.text() == "❐"
     tb.btnMax.click()
+    assert tb.btnMax.text() == "□"
     tb.btnClose.click()
 
     dbl = QMouseEvent(

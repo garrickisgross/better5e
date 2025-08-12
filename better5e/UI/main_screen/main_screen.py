@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QScrollArea,
+    QFrame,
     QPushButton,
     QSizePolicy,
     QSpacerItem,
@@ -16,10 +17,11 @@ from typing import TYPE_CHECKING
 from better5e.UI.core.basepage import BasePage
 from better5e.UI.main_screen.components.roll_history import RollHistoryPanel, RollCard
 from better5e.UI.main_screen.components.dice_options import DiceOptionsPanel
-from better5e.UI.main_screen.components.section_header import SectionHeader
+from better5e.UI.main_screen.components.section_header import Section
 from better5e.UI.main_screen.components.card_grid import CardGrid
 from better5e.UI.main_screen.components.homebrew_panel import HomebrewPanel
 from better5e.UI.style.theme import add_shadow
+from better5e.UI.style.tokens import gutter
 
 if TYPE_CHECKING:  # pragma: no cover - imported only for type checking
     from better5e.UI.core.app import App
@@ -41,13 +43,15 @@ class MainScreen(BasePage):
         body.setContentsMargins(0, 0, 0, 0)
 
         # Root 3-column layout -------------------------------------------------
+        G = gutter() if callable(gutter) else 20
         root = QHBoxLayout()
-        root.setContentsMargins(12, 8, 12, 12)
+        root.setContentsMargins(G, 8, G, 12)
         root.setSpacing(12)
         body.addLayout(root)
 
         # Left sidebar --------------------------------------------------------
         leftPane = QWidget()
+        leftPane.setObjectName("LeftPane")
         leftCol = QVBoxLayout(leftPane)
         self.roll_history = RollHistoryPanel()
         leftCol.addWidget(self.roll_history)
@@ -60,38 +64,41 @@ class MainScreen(BasePage):
         leftPane.setMaximumWidth(400)
 
         # Center content ------------------------------------------------------
-        centerPane = QScrollArea()
-        centerPane.setWidgetResizable(True)
+        self.centerScroll = QScrollArea()
+        self.centerScroll.setObjectName("CenterScroll")
+        self.centerScroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.centerScroll.setWidgetResizable(True)
 
         centerWidget = QWidget()
-        centerPane.setWidget(centerWidget)
+        centerWidget.setObjectName("CenterPane")
+        self.centerScroll.setWidget(centerWidget)
         centerCol = QVBoxLayout(centerWidget)
         centerCol.setContentsMargins(8, 0, 8, 0)
         centerCol.setSpacing(12)
 
         # Characters section
-        charactersSection = QWidget()
-        charactersLayout = QVBoxLayout(charactersSection)
-        self.characters_header = SectionHeader("My Characters")
+        charactersSection = Section("My Characters")
+        self.characters_header = charactersSection.header
         self.characters_header.seeAll.connect(self.seeAllCharacters.emit)
-        charactersLayout.addWidget(self.characters_header)
-        charactersLayout.addWidget(CardGrid(["Character 1", "Character 2", "Character 3"]))
+        charactersSection.body.addWidget(
+            CardGrid(["Character 1", "Character 2", "Character 3"])
+        )
         self.characters_create = QPushButton("Create New")
         self.characters_create.setProperty("class", "primary")
         self.characters_create.clicked.connect(self.createNewCharacter.emit)
-        charactersLayout.addWidget(self.characters_create)
+        charactersSection.body.addWidget(self.characters_create)
 
         # Campaigns section
-        campaignsSection = QWidget()
-        campaignsLayout = QVBoxLayout(campaignsSection)
-        self.campaigns_header = SectionHeader("My Campaigns")
+        campaignsSection = Section("My Campaigns")
+        self.campaigns_header = campaignsSection.header
         self.campaigns_header.seeAll.connect(self.seeAllCampaigns.emit)
-        campaignsLayout.addWidget(self.campaigns_header)
-        campaignsLayout.addWidget(CardGrid(["Campaign 1", "Campaign 2", "Campaign 3"]))
+        campaignsSection.body.addWidget(
+            CardGrid(["Campaign 1", "Campaign 2", "Campaign 3"])
+        )
         self.campaigns_create = QPushButton("Create New")
         self.campaigns_create.setProperty("class", "primary")
         self.campaigns_create.clicked.connect(self.createNewCampaign.emit)
-        campaignsLayout.addWidget(self.campaigns_create)
+        campaignsSection.body.addWidget(self.campaigns_create)
 
         centerCol.addWidget(charactersSection)
         centerCol.addItem(
@@ -101,6 +108,7 @@ class MainScreen(BasePage):
 
         # Right sidebar -------------------------------------------------------
         rightPane = HomebrewPanel()
+        rightPane.setObjectName("RightPane")
         rightPane.openHomebrew.connect(self.openHomebrew.emit)
         rightPane.setMinimumWidth(260)
         rightPane.setMaximumWidth(320)
@@ -108,7 +116,7 @@ class MainScreen(BasePage):
 
         # Assemble layout -----------------------------------------------------
         root.addWidget(leftPane)
-        root.addWidget(centerPane)
+        root.addWidget(self.centerScroll)
         root.addWidget(rightPane)
 
         # Keep sidebars compact while center expands

@@ -54,6 +54,12 @@ def dark() -> Dict[str, Any]:
     return t
 
 
+def gutter() -> int:
+    """Return the standard horizontal page padding."""
+
+    return 20
+
+
 def light() -> Dict[str, Any]:
     """Return tokens for a light theme.
 

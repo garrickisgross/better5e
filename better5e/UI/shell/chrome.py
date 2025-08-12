@@ -2,9 +2,16 @@ from __future__ import annotations
 from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
-    QWidget, QHBoxLayout, QLabel, QPushButton, QVBoxLayout,
-    QMainWindow, QFrame, QSizePolicy
+    QWidget,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QMainWindow,
+    QFrame,
+    QSizePolicy,
 )
+from better5e.UI.style.tokens import gutter
 
 
 class TitleBar(QFrame):
@@ -17,23 +24,36 @@ class TitleBar(QFrame):
         self.setFixedHeight(self.HEIGHT)
         self._mouse_pos: QPoint | None = None
 
+        G = gutter() if callable(gutter) else 20
         row = QHBoxLayout(self)
-        row.setContentsMargins(12, 0, 12, 0)
+        row.setContentsMargins(G, 0, G, 0)
         row.setSpacing(8)
 
         self.title = QLabel(title, self)
         self.title.setObjectName("AppTitle")
         self.title.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        f = self.title.font()
+        f.setPixelSize(18)
+        f.setWeight(700)
+        self.title.setFont(f)
 
         self.btnMin = QPushButton("–", self);  self.btnMin.setObjectName("WinBtnMin")
         self.btnMax = QPushButton("□", self);  self.btnMax.setObjectName("WinBtnMax")
         self.btnClose = QPushButton("×", self); self.btnClose.setObjectName("WinBtnClose")
 
-        for b, tip in [(self.btnMin, "Minimize"), (self.btnMax, "Maximize"), (self.btnClose, "Close")]:
+        for b, tip in [
+            (self.btnMin, "Minimize"),
+            (self.btnMax, "Maximize/Restore"),
+            (self.btnClose, "Close"),
+        ]:
             b.setCursor(Qt.CursorShape.PointingHandCursor)
             b.setProperty("class", "winbtn")
             b.setToolTip(tip)
-            b.setFixedSize(36, 28)
+            b.setFixedSize(42, 32)
+            f = b.font()
+            f.setPixelSize(16)
+            f.setWeight(600)
+            b.setFont(f)
 
         row.addWidget(self.title)
         row.addWidget(self.btnMin)
@@ -45,12 +65,23 @@ class TitleBar(QFrame):
         self.btnMax.clicked.connect(self._toggle_max_restore)
         self.btnClose.clicked.connect(lambda: self.window().close())
 
+        self._refresh_max_icon()
+        wnd = self.window()
+        if hasattr(wnd, "windowStateChanged"):
+            wnd.windowStateChanged.connect(  # pragma: no cover - platform dependent
+                lambda *_: self._refresh_max_icon()
+            )
+
+    def _refresh_max_icon(self) -> None:
+        self.btnMax.setText("❐" if self.window().isMaximized() else "□")
+
     def _toggle_max_restore(self):
         w = self.window()
         if w.isMaximized():
             w.showNormal()
         else:
             w.showMaximized()
+        self._refresh_max_icon()
 
     # Drag-to-move
     def mouseDoubleClickEvent(self, e):  # double-click to toggle
