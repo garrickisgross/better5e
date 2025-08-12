@@ -8,17 +8,14 @@ QMainWindow, QWidget {
 }
 
 /* Window + title bar */
-QMainWindow#FramelessMainWindow, QWidget#WindowContent { background: $bg; }
-
-QFrame#TitleBar {
-  background: $bg;              /* SAME as the app background */
-  border-bottom: 1px solid $border;
-}
+QFrame#TitleBar { background: $bg; border-bottom: none; }
+QWidget#WindowContent, QMainWindow#FramelessMainWindow { background: $bg; border: none; }
 QLabel#AppTitle {
-  font-size: 14px;
-  font-weight: 700;
   color: $text;
+  font-size: 18px;
+  font-weight: 700;
   letter-spacing: .02em;
+  padding-left: 0;
 }
 
 /* Window control buttons */
@@ -117,13 +114,12 @@ QListWidget, QListView, QScrollArea {
     border-radius: ${radius_md}px;
 }
 
-QScrollArea#MainScrollArea {
+QScrollArea#CenterScroll,
+QScrollArea#CenterScroll QWidget,
+QScrollArea#CenterScroll > QWidget > QWidget {
   background: transparent;
-  border: 0;
+  border: none;
   border-radius: 0;
-}
-QScrollArea#MainScrollArea > QWidget {
-  background: transparent;
 }
 QListWidget::item {
     background: transparent;
@@ -154,6 +150,11 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     subcontrol-origin: margin;
 }
 
+/* Kill residual frames and backgrounds around panes */
+QWidget#LeftPane, QWidget#CenterPane, QWidget#RightPane { border: none; background: transparent; }
+QFrame[frameShape="4"], QFrame[frameShape="5"] { border: none; }
+
+
 /* Section container */
 QFrame#Section {
   border: 0;
@@ -165,18 +166,7 @@ QFrame#Section {
 QWidget#SectionHeader { background: transparent; }
 QLabel#SectionTitle { font-size: 20px; font-weight: 700; color: $text; }
 
-/* QGroupBox styling */
-QGroupBox {
-    border: 1px solid $border;
-    border-radius: ${radius_md}px;
-    margin-top: ${space_md}px;
-}
-QGroupBox::title {
-    subcontrol-origin: margin;
-    subcontrol-position: top left;
-    padding: 0 ${space_sm}px;
-    color: $mutedText;
-}
+QGroupBox { border: none; }
 
 /* Roll cards */
 QWidget#RollCard, QFrame#RollCard {

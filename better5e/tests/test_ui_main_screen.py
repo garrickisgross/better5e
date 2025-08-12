@@ -8,7 +8,7 @@ import os
 import random
 from datetime import datetime
 
-from PyQt6.QtWidgets import QApplication, QMenu, QScrollArea, QFrame
+from PyQt6.QtWidgets import QApplication, QMenu, QScrollArea, QFrame, QWidget
 import pytest
 
 from better5e.UI.main_screen.components.roll_history import RollHistoryPanel
@@ -17,6 +17,7 @@ from better5e.UI.main_screen.components.section_header import SectionHeader
 from better5e.UI.main_screen.components.card_grid import CardGrid
 from better5e.UI.main_screen.components.homebrew_panel import HomebrewPanel
 from better5e.UI.main_screen.main_screen import MainScreen
+from better5e.UI.style.tokens import gutter
 
 
 @pytest.fixture(scope="session")
@@ -140,9 +141,15 @@ def test_homebrew_panel_signals(qapp):
 def test_main_screen_scroll_area_styling(qapp):
     app = types.SimpleNamespace()
     screen = MainScreen(app)
-    scroll = screen.findChild(QScrollArea, "MainScrollArea")
+    scroll = screen.findChild(QScrollArea, "CenterScroll")
     assert scroll is not None
     assert scroll.frameShape() == QFrame.Shape.NoFrame
+    assert screen.findChild(QWidget, "LeftPane") is not None
+    assert screen.findChild(QWidget, "CenterPane") is not None
+    assert screen.findChild(QWidget, "RightPane") is not None
+    root = screen.layout().itemAt(0).layout()
+    m = root.contentsMargins()
+    assert m.left() == gutter() and m.right() == gutter()
 
 
 def test_main_screen_signal_propagation(qapp, monkeypatch):

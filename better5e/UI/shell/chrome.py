@@ -2,9 +2,16 @@ from __future__ import annotations
 from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
-    QWidget, QHBoxLayout, QLabel, QPushButton, QVBoxLayout,
-    QMainWindow, QFrame, QSizePolicy
+    QWidget,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QMainWindow,
+    QFrame,
+    QSizePolicy,
 )
+from better5e.UI.style.tokens import gutter
 
 
 class TitleBar(QFrame):
@@ -17,13 +24,18 @@ class TitleBar(QFrame):
         self.setFixedHeight(self.HEIGHT)
         self._mouse_pos: QPoint | None = None
 
+        G = gutter() if callable(gutter) else 20
         row = QHBoxLayout(self)
-        row.setContentsMargins(12, 0, 12, 0)
+        row.setContentsMargins(G, 0, G, 0)
         row.setSpacing(8)
 
         self.title = QLabel(title, self)
         self.title.setObjectName("AppTitle")
         self.title.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        f = self.title.font()
+        f.setPixelSize(18)
+        f.setWeight(700)
+        self.title.setFont(f)
 
         self.btnMin = QPushButton("–", self);  self.btnMin.setObjectName("WinBtnMin")
         self.btnMax = QPushButton("□", self);  self.btnMax.setObjectName("WinBtnMax")

@@ -21,6 +21,7 @@ from better5e.UI.main_screen.components.section_header import Section
 from better5e.UI.main_screen.components.card_grid import CardGrid
 from better5e.UI.main_screen.components.homebrew_panel import HomebrewPanel
 from better5e.UI.style.theme import add_shadow
+from better5e.UI.style.tokens import gutter
 
 if TYPE_CHECKING:  # pragma: no cover - imported only for type checking
     from better5e.UI.core.app import App
@@ -42,13 +43,15 @@ class MainScreen(BasePage):
         body.setContentsMargins(0, 0, 0, 0)
 
         # Root 3-column layout -------------------------------------------------
+        G = gutter() if callable(gutter) else 20
         root = QHBoxLayout()
-        root.setContentsMargins(12, 8, 12, 12)
+        root.setContentsMargins(G, 8, G, 12)
         root.setSpacing(12)
         body.addLayout(root)
 
         # Left sidebar --------------------------------------------------------
         leftPane = QWidget()
+        leftPane.setObjectName("LeftPane")
         leftCol = QVBoxLayout(leftPane)
         self.roll_history = RollHistoryPanel()
         leftCol.addWidget(self.roll_history)
@@ -61,13 +64,14 @@ class MainScreen(BasePage):
         leftPane.setMaximumWidth(400)
 
         # Center content ------------------------------------------------------
-        centerPane = QScrollArea()
-        centerPane.setObjectName("MainScrollArea")
-        centerPane.setFrameShape(QFrame.Shape.NoFrame)
-        centerPane.setWidgetResizable(True)
+        self.centerScroll = QScrollArea()
+        self.centerScroll.setObjectName("CenterScroll")
+        self.centerScroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.centerScroll.setWidgetResizable(True)
 
         centerWidget = QWidget()
-        centerPane.setWidget(centerWidget)
+        centerWidget.setObjectName("CenterPane")
+        self.centerScroll.setWidget(centerWidget)
         centerCol = QVBoxLayout(centerWidget)
         centerCol.setContentsMargins(8, 0, 8, 0)
         centerCol.setSpacing(12)
@@ -104,6 +108,7 @@ class MainScreen(BasePage):
 
         # Right sidebar -------------------------------------------------------
         rightPane = HomebrewPanel()
+        rightPane.setObjectName("RightPane")
         rightPane.openHomebrew.connect(self.openHomebrew.emit)
         rightPane.setMinimumWidth(260)
         rightPane.setMaximumWidth(320)
@@ -111,7 +116,7 @@ class MainScreen(BasePage):
 
         # Assemble layout -----------------------------------------------------
         root.addWidget(leftPane)
-        root.addWidget(centerPane)
+        root.addWidget(self.centerScroll)
         root.addWidget(rightPane)
 
         # Keep sidebars compact while center expands
