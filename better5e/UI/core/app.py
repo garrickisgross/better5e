@@ -1,6 +1,8 @@
 from typing import Callable, Union
 
-from PyQt6.QtWidgets import QApplication, QMainWindow, QStackedWidget, QWidget
+from PyQt6.QtWidgets import QApplication, QStackedWidget, QWidget
+
+from better5e.UI.shell.chrome import FramelessMainWindow
 
 WidgetFactory = Callable[["App"], QWidget]
 
@@ -11,12 +13,11 @@ class App:
     def __init__(self, app: QApplication, main: Union[QWidget, WidgetFactory]):
         self.app = app
         self.stack: list[QWidget] = []
-        self.window = QMainWindow()
-        self.window.setWindowTitle("better5e")
-        self.window.resize(520, 320)
+        self.window = FramelessMainWindow(title="better5e")
+        self.window.resize(1440, 900)
 
         self._stacked = QStackedWidget()
-        self.window.setCentralWidget(self._stacked)
+        self.window.set_content(self._stacked)
 
         first = main(self) if callable(main) else main
         self.push(first)

@@ -7,6 +7,31 @@ QMainWindow, QWidget {
     font-size: 13px;
 }
 
+/* Window + title bar */
+QMainWindow#FramelessMainWindow, QWidget#WindowContent { background: $bg; }
+
+QFrame#TitleBar {
+  background: $bg;              /* SAME as the app background */
+  border-bottom: 1px solid $border;
+}
+QLabel#AppTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: $text;
+  letter-spacing: .02em;
+}
+
+/* Window control buttons */
+QPushButton[class~="winbtn"] {
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: $text;
+}
+QPushButton[class~="winbtn"]:hover { background: rgba(255,255,255,0.06); }
+QPushButton#WinBtnClose:hover { background: rgba(244, 63, 94, 0.25); }  /* soft red */
+QPushButton#WinBtnClose:pressed { background: rgba(244, 63, 94, 0.35); }
+
 /* Card container */
 QFrame#Card {
     background-color: $surface;
