@@ -34,10 +34,17 @@ class ModifierControl(QWidget):
 
         minus = QToolButton()
         minus.setText("-")
+
         minus.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         plus = QToolButton()
         plus.setText("+")
         plus.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
+        minus.setMinimumWidth(36)
+        plus = QToolButton()
+        plus.setText("+")
+        plus.setMinimumWidth(36)
+
         edit = QLineEdit("0")
         edit.setValidator(QIntValidator(-999, 999, self))
         edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -51,6 +58,8 @@ class ModifierControl(QWidget):
         layout.addWidget(plus)
         layout.setStretch(0, 1)
         layout.setStretch(2, 1)
+
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
@@ -109,7 +118,10 @@ class DiceOptionsPanel(QWidget):
 
         grid = QGridLayout()
         grid.setContentsMargins(0, 0, 0, 0)
+
         grid.setSpacing(8)
+        grid.setHorizontalSpacing(8)
+        grid.setVerticalSpacing(8)
         root.addLayout(grid)
         root.setAlignment(grid, Qt.AlignmentFlag.AlignHCenter)
 
@@ -124,7 +136,10 @@ class DiceOptionsPanel(QWidget):
             self.die_buttons[sides] = btn
 
         self.modifierControl = ModifierControl()
+
         self.modifierControl.setFixedWidth(60 * 4 + 8 * 3)
+
+
         root.addWidget(self.modifierControl, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         root.addItem(QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
