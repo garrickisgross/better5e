@@ -12,6 +12,8 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QToolButton,
     QLineEdit,
+    QSizePolicy,
+    QSpacerItem,
 )
 
 from better5e.UI.main_screen.components.die_button import DieButton
@@ -82,15 +84,13 @@ class DiceOptionsPanel(QWidget):
     def __init__(self) -> None:
         super().__init__()
 
-        main = QHBoxLayout(self)
-        main.setSpacing(12)
-
-        left_col = QVBoxLayout()
-        main.addLayout(left_col, 1)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(8, 8, 8, 8)
+        root.setSpacing(12)
 
         grid = QGridLayout()
         grid.setSpacing(6)
-        left_col.addLayout(grid)
+        root.addLayout(grid)
 
         self.dice: Dict[int, DieButton] = {}
         order = [4, 6, 8, 10, 12, 20, 100]
@@ -102,10 +102,9 @@ class DiceOptionsPanel(QWidget):
             self.dice[sides] = btn
 
         self.mod_ctrl = ModifierControl()
-        left_col.addWidget(self.mod_ctrl)
+        root.addWidget(self.mod_ctrl)
 
-        actions = QVBoxLayout()
-        main.addLayout(actions)
+        root.addItem(QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
         reset_btn = QPushButton("Reset")
         reset_btn.setObjectName("ResetBtn")
@@ -115,9 +114,12 @@ class DiceOptionsPanel(QWidget):
         roll_btn.setProperty("class", "primary")
         roll_btn.setEnabled(False)
 
-        actions.addWidget(reset_btn)
-        actions.addWidget(roll_btn)
-        actions.addStretch(1)
+        for b in (reset_btn, roll_btn):
+            b.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            b.setMinimumHeight(44)
+
+        root.addWidget(reset_btn)
+        root.addWidget(roll_btn)
 
         reset_btn.clicked.connect(self.reset)
         roll_btn.clicked.connect(self.roll)

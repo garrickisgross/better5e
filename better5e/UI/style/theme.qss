@@ -215,5 +215,5 @@ QWidget#ModifierControl QToolButton {
 QWidget#ModifierControl QToolButton:hover { border-color: $accent; }
 
 /* Actions */
-QPushButton#ResetBtn { width: 100%; margin-bottom: 8px; }
-QPushButton#RollBtn { width: 100%; }
+QPushButton#ResetBtn { margin-top: 8px; }
+QPushButton#RollBtn  { margin-top: 6px; }
