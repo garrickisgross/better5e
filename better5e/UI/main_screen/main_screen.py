@@ -60,6 +60,7 @@ class MainScreen(BasePage):
         center_layout.addWidget(self.characters_header)
         center_layout.addWidget(CardGrid(["Character 1", "Character 2", "Character 3"]))
         self.characters_create = QPushButton("Create New")
+        self.characters_create.setProperty("class", "primary")
         self.characters_create.clicked.connect(self.createNewCharacter.emit)
         center_layout.addWidget(self.characters_create)
 
@@ -69,6 +70,7 @@ class MainScreen(BasePage):
         center_layout.addWidget(self.campaigns_header)
         center_layout.addWidget(CardGrid(["Campaign 1", "Campaign 2", "Campaign 3"]))
         self.campaigns_create = QPushButton("Create New")
+        self.campaigns_create.setProperty("class", "primary")
         self.campaigns_create.clicked.connect(self.createNewCampaign.emit)
         center_layout.addWidget(self.campaigns_create)
 
