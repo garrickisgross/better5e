@@ -27,6 +27,9 @@ QPushButton[class~="winbtn"] {
   border-radius: 6px;
   background: transparent;
   color: $text;
+  font-size: 16px;
+  font-weight: 600;
+  padding-bottom: 0px;
 }
 QPushButton[class~="winbtn"]:hover { background: rgba(255,255,255,0.06); }
 QPushButton#WinBtnClose:hover { background: rgba(244, 63, 94, 0.25); }  /* soft red */
@@ -142,22 +145,17 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     subcontrol-origin: margin;
 }
 
-/* Section headers */
-[class="SectionHeader"] QLabel {
-    font-size: 18px;
-    font-weight: bold;
-    color: $text;
-}
-[class="SectionHeader"] QPushButton {
-    qproperty-flat: true;
+/* Hairline divider at the very top of each section */
+QFrame#Section {
+  border-top: 1px solid $border;
+  border-radius: 0;
+  padding-top: 12px;
+  background: transparent;
 }
 
-QLabel#SectionHeader {
-  font-size: 18px;
-  font-weight: 700;
-  color: $text;
-  margin-bottom: 4px;
-}
+/* Keep header looking like a header */
+QWidget#SectionHeader { background: transparent; }
+QLabel#SectionTitle { font-size: 20px; font-weight: 700; color: $text; }
 
 /* QGroupBox styling */
 QGroupBox {
