@@ -20,7 +20,8 @@ from better5e.UI.style.tokens import gutter
 # Outer gutter matches the main screen margins.  The title text is indented
 # slightly further to align with the dice panel content below.
 GUTTER = gutter() if callable(gutter) else 20
-TITLE_INDENT = 8
+TITLE_INDENT = 12
+
 
 
 class TitleBar(QFrame):
@@ -43,7 +44,8 @@ class TitleBar(QFrame):
         self.title.setIndent(TITLE_INDENT)
         self.title.setContentsMargins(0, 2, 0, 0)
         f = self.title.font()
-        f.setPixelSize(20)
+        f.setPixelSize(24)
+
         f.setWeight(700)
         self.title.setFont(f)
 
