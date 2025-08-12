@@ -111,9 +111,10 @@ class MainScreen(BasePage):
         root.addWidget(centerPane)
         root.addWidget(rightPane)
 
-        root.setStretch(0, 3)
-        root.setStretch(1, 7)
-        root.setStretch(2, 3)
+        # Middle column takes half the width (25/50/25 distribution)
+        root.setStretch(0, 1)
+        root.setStretch(1, 2)
+        root.setStretch(2, 1)
 
         self.homebrew_panel = rightPane
 
