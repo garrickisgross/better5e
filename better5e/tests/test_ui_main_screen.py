@@ -132,7 +132,7 @@ def test_homebrew_panel_signals(qapp):
     received = []
     panel.openHomebrew.connect(received.append)
     # trigger first button
-    btn = panel.layout().itemAt(0).widget()
+    btn = panel.layout().itemAt(1).widget()
     btn.click()
     assert received == ["feature"]
 
@@ -152,7 +152,7 @@ def test_main_screen_signal_propagation(qapp, monkeypatch):
     screen.characters_create.click()
     screen.campaigns_header.button.click()
     screen.campaigns_create.click()
-    hb_btn = screen.homebrew_panel.layout().itemAt(1).widget()
+    hb_btn = screen.homebrew_panel.layout().itemAt(2).widget()
     hb_btn.click()
 
     assert signals == ["see_chars", "new_char", "see_camps", "new_camp", "class"]

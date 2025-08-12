@@ -1,5 +1,5 @@
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel
 
 from better5e.UI.style.theme import add_shadow
 
@@ -12,7 +12,12 @@ class HomebrewPanel(QWidget):
     def __init__(self) -> None:
         super().__init__()
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(12)
+
+        title = QLabel("Homebrew")
+        title.setObjectName("SectionHeader")
+        layout.addWidget(title)
 
         kinds = [
             "feature",
@@ -31,4 +36,4 @@ class HomebrewPanel(QWidget):
             add_shadow(btn)
             layout.addWidget(btn)
 
-        layout.addStretch()
+        layout.addStretch(1)
