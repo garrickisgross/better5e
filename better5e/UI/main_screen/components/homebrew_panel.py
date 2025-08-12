@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton
 
 from better5e.UI.main_screen.components.section_header import SectionHeader
 from better5e.UI.style.theme import add_shadow
+from better5e.UI.homebrew.feature_create_page import FeatureCreatePage
 
 
 class HomebrewPanel(QWidget):
@@ -10,8 +11,9 @@ class HomebrewPanel(QWidget):
 
     openHomebrew = pyqtSignal(str)
 
-    def __init__(self) -> None:
+    def __init__(self, app) -> None:
         super().__init__()
+        self.app = app
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(12)
@@ -33,7 +35,10 @@ class HomebrewPanel(QWidget):
 
         for kind in kinds:
             btn = QPushButton(f"Create {kind.title()}")
-            btn.clicked.connect(lambda _=False, k=kind: self.openHomebrew.emit(k))
+            if kind == "feature":
+                btn.clicked.connect(lambda _=False: self.app.push(FeatureCreatePage(self.app)))
+            else:
+                btn.clicked.connect(lambda _=False, k=kind: self.openHomebrew.emit(k))
             add_shadow(btn)
             layout.addWidget(btn)
 

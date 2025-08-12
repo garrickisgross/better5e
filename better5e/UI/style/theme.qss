@@ -121,6 +121,17 @@ QListWidget, QListView, QScrollArea {
     border-radius: ${radius_md}px;
 }
 
+/* Homebrew drag and drop */
+DropZone {
+    border: 1px dashed $border;
+    background: $surfaceAlt;
+}
+Chip {
+    border: 1px solid $border;
+    border-radius: ${radius_sm}px;
+    background: $surface;
+}
+
 QScrollArea#CenterScroll,
 QScrollArea#CenterScroll QWidget#qt_scrollarea_viewport,
 QScrollArea#CenterScroll QWidget#qt_scrollarea_viewport > QWidget {

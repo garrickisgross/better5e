@@ -15,6 +15,7 @@ from better5e.UI.main_screen.components.roll_history import RollHistoryPanel
 from better5e.UI.main_screen.components.dice_options import DiceOptionsPanel
 from better5e.UI.main_screen.components.section_header import SectionHeader
 from better5e.UI.main_screen.components.card_grid import CardGrid
+from better5e.UI.main_screen.components import homebrew_panel
 from better5e.UI.main_screen.components.homebrew_panel import HomebrewPanel
 from better5e.UI.main_screen.main_screen import MainScreen
 from better5e.UI.style.tokens import gutter
@@ -128,18 +129,25 @@ def test_section_header_and_card_grid(qapp):
     assert grid.layout().count() == 3
 
 
-def test_homebrew_panel_signals(qapp):
-    panel = HomebrewPanel()
-    received = []
+def test_homebrew_panel_signals(qapp, monkeypatch):
+    pushed: list[object] = []
+    app = types.SimpleNamespace(push=lambda w: pushed.append(w))
+    monkeypatch.setattr(homebrew_panel, "FeatureCreatePage", lambda app: QWidget())
+    panel = HomebrewPanel(app)
+    received: list[str] = []
     panel.openHomebrew.connect(received.append)
-    # trigger first button
-    btn = panel.layout().itemAt(1).widget()
-    btn.click()
-    assert received == ["feature"]
+
+    btn_feat = panel.layout().itemAt(1).widget()
+    btn_feat.click()
+    assert pushed and isinstance(pushed[0], QWidget)
+
+    btn_class = panel.layout().itemAt(2).widget()
+    btn_class.click()
+    assert received == ["class"]
 
 
 def test_main_screen_scroll_area_styling(qapp):
-    app = types.SimpleNamespace()
+    app = types.SimpleNamespace(push=lambda w: None)
     screen = MainScreen(app)
     scroll = screen.findChild(QScrollArea, "CenterScroll")
     assert scroll is not None
@@ -153,7 +161,7 @@ def test_main_screen_scroll_area_styling(qapp):
 
 
 def test_main_screen_signal_propagation(qapp, monkeypatch):
-    app = types.SimpleNamespace()
+    app = types.SimpleNamespace(push=lambda w: None)
     screen = MainScreen(app)
 
     signals = []
