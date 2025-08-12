@@ -12,7 +12,7 @@ QFrame#TitleBar { background: $bg; border-bottom: none; }
 QWidget#WindowContent, QMainWindow#FramelessMainWindow { background: $bg; border: none; }
 QLabel#AppTitle {
   color: $text;
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: .02em;
   padding-left: 0;

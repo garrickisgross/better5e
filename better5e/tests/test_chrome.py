@@ -33,8 +33,10 @@ def test_chrome_basic_interactions(qapp, monkeypatch):
     tb = win.titleBar
     assert tb.btnMin.size().width() == 42 and tb.btnMin.size().height() == 32
     assert tb.btnMin.font().pixelSize() == 16
-    assert tb.title.font().pixelSize() == 18
+    assert tb.title.font().pixelSize() == 24
     assert tb.layout().contentsMargins().left() == gutter()
+    assert tb.title.contentsMargins().top() == 2
+    assert tb.title.indent() == 12
 
     tb.btnMin.click()
     tb.btnMax.click()

@@ -14,6 +14,15 @@ from PyQt6.QtWidgets import (
 from better5e.UI.style.tokens import gutter
 
 
+# Keep the title bar aligned with main screen gutters.  This value should
+# mirror the horizontal margins used in ``main_screen.py`` so the title text
+# lines up exactly with the app content (e.g. the dice box).
+# Outer gutter matches the main screen margins.  The title text is indented
+# slightly further to align with the dice panel content below.
+GUTTER = gutter() if callable(gutter) else 20
+TITLE_INDENT = 12
+
+
 class TitleBar(QFrame):
     """Custom title bar with app title on left and window controls on right."""
     HEIGHT = 40
@@ -24,16 +33,17 @@ class TitleBar(QFrame):
         self.setFixedHeight(self.HEIGHT)
         self._mouse_pos: QPoint | None = None
 
-        G = gutter() if callable(gutter) else 20
         row = QHBoxLayout(self)
-        row.setContentsMargins(G, 0, G, 0)
+        row.setContentsMargins(GUTTER, 0, GUTTER, 0)
         row.setSpacing(8)
 
         self.title = QLabel(title, self)
         self.title.setObjectName("AppTitle")
         self.title.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.title.setIndent(TITLE_INDENT)
+        self.title.setContentsMargins(0, 2, 0, 0)
         f = self.title.font()
-        f.setPixelSize(18)
+        f.setPixelSize(24)
         f.setWeight(700)
         self.title.setFont(f)
 
