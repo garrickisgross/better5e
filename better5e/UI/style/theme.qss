@@ -115,8 +115,8 @@ QListWidget, QListView, QScrollArea {
 }
 
 QScrollArea#CenterScroll,
-QScrollArea#CenterScroll QWidget,
-QScrollArea#CenterScroll > QWidget > QWidget {
+QScrollArea#CenterScroll QWidget#qt_scrollarea_viewport,
+QScrollArea#CenterScroll QWidget#qt_scrollarea_viewport > QWidget {
   background: transparent;
   border: none;
   border-radius: 0;
