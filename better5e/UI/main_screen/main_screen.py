@@ -1,15 +1,15 @@
 import random
 from datetime import datetime
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import pyqtSignal, QSettings, Qt
 from PyQt6.QtWidgets import (
-    QHBoxLayout,
     QVBoxLayout,
     QWidget,
     QScrollArea,
     QPushButton,
     QSizePolicy,
     QSpacerItem,
+    QSplitter,
 )
 from typing import TYPE_CHECKING
 
@@ -40,38 +40,33 @@ class MainScreen(BasePage):
         body = self.layout()
         body.setContentsMargins(0, 0, 0, 0)
 
-        # Root 3-column layout -------------------------------------------------
-        root = QHBoxLayout()
-        root.setContentsMargins(12, 8, 12, 12)
-        root.setSpacing(12)
-        body.addLayout(root)
-
         # Left sidebar --------------------------------------------------------
         leftPane = QWidget()
         leftCol = QVBoxLayout(leftPane)
+        leftCol.setContentsMargins(12, 12, 12, 12)
+        leftCol.setSpacing(12)
         self.roll_history = RollHistoryPanel()
         leftCol.addWidget(self.roll_history)
         self.dice_panel = DiceOptionsPanel()
         self.dice_panel.rollRequested.connect(self._on_roll_requested)
         leftCol.addWidget(self.dice_panel)
         leftCol.setStretch(0, 1)
-
+        leftPane.setMinimumWidth(380)
         leftPane.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
-        leftPane.setMaximumWidth(400)
 
         # Center content ------------------------------------------------------
         centerPane = QScrollArea()
         centerPane.setWidgetResizable(True)
-
         centerWidget = QWidget()
         centerPane.setWidget(centerWidget)
         centerCol = QVBoxLayout(centerWidget)
-        centerCol.setContentsMargins(8, 0, 8, 0)
-        centerCol.setSpacing(12)
+        centerCol.setContentsMargins(12, 12, 12, 12)
+        centerCol.setSpacing(16)
 
         # Characters section
         charactersSection = QWidget()
         charactersLayout = QVBoxLayout(charactersSection)
+        charactersLayout.setContentsMargins(0, 0, 0, 0)
         self.characters_header = SectionHeader("My Characters")
         self.characters_header.seeAll.connect(self.seeAllCharacters.emit)
         charactersLayout.addWidget(self.characters_header)
@@ -84,6 +79,7 @@ class MainScreen(BasePage):
         # Campaigns section
         campaignsSection = QWidget()
         campaignsLayout = QVBoxLayout(campaignsSection)
+        campaignsLayout.setContentsMargins(0, 0, 0, 0)
         self.campaigns_header = SectionHeader("My Campaigns")
         self.campaigns_header.seeAll.connect(self.seeAllCampaigns.emit)
         campaignsLayout.addWidget(self.campaigns_header)
@@ -103,23 +99,35 @@ class MainScreen(BasePage):
         rightPane = HomebrewPanel()
         rightPane.openHomebrew.connect(self.openHomebrew.emit)
         rightPane.setMinimumWidth(260)
-        rightPane.setMaximumWidth(320)
         rightPane.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+        rightLayout = rightPane.layout()
+        if rightLayout is not None:
+            rightLayout.setContentsMargins(12, 12, 12, 12)
+            rightLayout.setSpacing(12)
 
-        # Assemble layout -----------------------------------------------------
-        root.addWidget(leftPane)
-        root.addWidget(centerPane)
-        root.addWidget(rightPane)
+        # Splitter ------------------------------------------------------------
+        split = QSplitter(Qt.Orientation.Horizontal, self)
+        split.addWidget(leftPane)
+        split.addWidget(centerPane)
+        split.addWidget(rightPane)
+        split.setChildrenCollapsible(False)
+        split.setHandleWidth(6)
+        split.setStretchFactor(1, 1)
+        body.addWidget(split)
 
-        # Keep sidebars compact while center expands
-        root.setStretch(0, 0)
-        root.setStretch(1, 1)
-        root.setStretch(2, 0)
+        settings = QSettings("better5e", "app")
+        sizes = settings.value("ui/home_splitter")
+        if sizes:  # pragma: no cover - requires persisted settings
+            split.setSizes([int(x) for x in sizes])
+        else:
+            w = self.width() or 1400
+            split.setSizes([int(w * 0.24), int(w * 0.56), int(w * 0.20)])
 
+        self.split = split
         self.homebrew_panel = rightPane
 
     # roll handling -----------------------------------------------------
-    def _on_roll_requested(self, dice: dict[int, int], modifier: int) -> None:
+    def _on_roll_requested(self, dice: dict[int, int], modifier: int, flags: dict | None = None) -> None:
         rolls: list[int] = []
         notation_parts: list[str] = []
         total = modifier
@@ -145,3 +153,8 @@ class MainScreen(BasePage):
             "dice": dice,
         }
         self.roll_history.add_roll_card(card, data)
+
+    def closeEvent(self, e) -> None:  # pragma: no cover - GUI hook
+        settings = QSettings("better5e", "app")
+        settings.setValue("ui/home_splitter", self.split.sizes())
+        super().closeEvent(e)

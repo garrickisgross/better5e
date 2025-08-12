@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QToolButton,
     QLineEdit,
+    QLabel,
     QSizePolicy,
     QSpacerItem,
 )
@@ -81,7 +82,7 @@ class ModifierControl(QWidget):
 class DiceOptionsPanel(QWidget):
     """Modern dice pad allowing multiple dice selection."""
 
-    rollRequested = pyqtSignal(dict, int)
+    rollRequested = pyqtSignal(dict, int, dict)
     resetRequested = pyqtSignal()
 
     def __init__(self, *, compact: bool = True, parent: QWidget | None = None) -> None:
@@ -109,13 +110,32 @@ class DiceOptionsPanel(QWidget):
         for i, sides in enumerate(DICE_SIDES):
             btn = DieButton(sides)
             btn.setToolTip("Coin flip (d2)" if sides == 2 else f"d{sides}")
-            btn.countChanged.connect(self._update_roll_enabled)
+            btn.countChanged.connect(self._on_die_changed)
             row, col = divmod(i, 4)
             grid.addWidget(btn, row, col)
             self.die_buttons[sides] = btn
 
+        self._build_selected_row()
+        root.addWidget(self.selectedWidget)
+
         self.modifierControl = ModifierControl()
         root.addWidget(self.modifierControl)
+
+        flags_row = QHBoxLayout()
+        flags_row.setContentsMargins(0, 0, 0, 0)
+        flags_row.setSpacing(6)
+        adv_btn = QToolButton()
+        adv_btn.setText("Adv")
+        adv_btn.setCheckable(True)
+        dis_btn = QToolButton()
+        dis_btn.setText("Dis")
+        dis_btn.setCheckable(True)
+        adv_btn.toggled.connect(lambda v: dis_btn.setChecked(False) if v else None)
+        dis_btn.toggled.connect(lambda v: adv_btn.setChecked(False) if v else None)
+        flags_row.addWidget(adv_btn)
+        flags_row.addWidget(dis_btn)
+        flags_row.addStretch(1)
+        root.addLayout(flags_row)
 
         root.addItem(QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
@@ -138,6 +158,9 @@ class DiceOptionsPanel(QWidget):
 
         QShortcut(QKeySequence("R"), self, activated=self.roll)
         QShortcut(QKeySequence("Esc"), self, activated=self.reset)
+        QShortcut(QKeySequence("Ctrl+Backspace"), self, activated=self.reset)
+        for idx, sides in enumerate(DICE_SIDES, start=1):
+            QShortcut(QKeySequence(str(idx)), self, activated=lambda s=sides: setattr(self.die_buttons[s], "count", self.die_buttons[s].count + 1))
 
         self.rollBtn = roll_btn
         self.resetBtn = reset_btn
@@ -145,6 +168,8 @@ class DiceOptionsPanel(QWidget):
         self.roll_btn = self.rollBtn
         self.reset_btn = self.resetBtn
         self.mod_ctrl = self.modifierControl
+        self.advBtn = adv_btn
+        self.disBtn = dis_btn
 
         # tighten vertical rhythm
         root.setSpacing(8)
@@ -171,18 +196,26 @@ class DiceOptionsPanel(QWidget):
         total = sum(btn.count for btn in self.die_buttons.values())
         self.rollBtn.setEnabled(total > 0)
 
+    def _on_die_changed(self, *_: int) -> None:
+        self._update_roll_enabled()
+        self._refresh_selected_row()
+
     def reset(self) -> None:
         for btn in self.die_buttons.values():
             btn.count = 0
         self.modifierControl.setValue(0)
         self._update_roll_enabled()
+        self._refresh_selected_row()
+        self.advBtn.setChecked(False)
+        self.disBtn.setChecked(False)
         self.resetRequested.emit()
 
     def roll(self) -> None:
         dice = {sides: btn.count for sides, btn in self.die_buttons.items() if btn.count}
         if not dice:
             return
-        self.rollRequested.emit(dice, self.modifierControl.value)
+        flags = {"adv": self.advBtn.isChecked(), "dis": self.disBtn.isChecked()}
+        self.rollRequested.emit(dice, self.modifierControl.value, flags)
 
     def state(self) -> Tuple[Dict[int, int], int]:
         dice = {sides: btn.count for sides, btn in self.die_buttons.items() if btn.count}
@@ -196,3 +229,27 @@ class DiceOptionsPanel(QWidget):
             sign = "+" if mod > 0 else "-"
             notation = f"{notation} {sign} {abs(mod)}" if notation else f"{mod}"
         return notation.strip()
+
+    # selected row ------------------------------------------------------
+    def _build_selected_row(self) -> None:
+        self.selectedWidget = QWidget()
+        row = QHBoxLayout(self.selectedWidget)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(6)
+        self.selectedRow = row
+        self._refresh_selected_row()
+
+    def _refresh_selected_row(self) -> None:
+        row = self.selectedRow
+        while row.count():
+            item = row.takeAt(0)
+            w = item.widget()
+            if w:
+                w.deleteLater()
+        for sides, btn in self.die_buttons.items():
+            if btn.count:
+                lab = QLabel(f"d{sides}\xd7{btn.count} \xd7")
+                lab.setProperty("class", "chip")
+                lab.mousePressEvent = lambda _e, s=sides: setattr(self.die_buttons[s], "count", self.die_buttons[s].count - 1)
+                row.addWidget(lab)
+        row.addStretch(1)

@@ -3,8 +3,8 @@ from __future__ import annotations
 import random
 from datetime import datetime
 
-from PyQt6.QtCore import Qt, QPoint, QSize
-from PyQt6.QtGui import QClipboard
+from PyQt6.QtCore import Qt, QPoint, QSize, QPropertyAnimation, QEasingCurve, QParallelAnimationGroup
+from PyQt6.QtGui import QClipboard, QCursor
 from PyQt6.QtWidgets import (
     QApplication,
     QLabel,
@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import (
     QWidget,
     QMenu,
     QAbstractItemView,
+    QToolTip,
 )
 
 from better5e.UI.style.theme import add_shadow
@@ -90,6 +91,7 @@ class RollHistoryPanel(QListWidget):
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self._show_context_menu)
         self.itemDoubleClicked.connect(self._reroll_item)
+        self.itemClicked.connect(self._on_item_clicked)
 
         self._stick_bottom: bool = True
         sb = self.verticalScrollBar()
@@ -123,6 +125,7 @@ class RollHistoryPanel(QListWidget):
             item.setData(Qt.ItemDataRole.UserRole, data)
         self.addItem(item)
         self.setItemWidget(item, card_widget)
+        self._animate_in(card_widget)
         # rangeChanged will fire -> _maybe_snap_to_bottom handles scroll
 
     def add_entry(self, text: str) -> None:
@@ -184,6 +187,10 @@ class RollHistoryPanel(QListWidget):
         text = f"{data['notation']} = {data['total']} ({', '.join(map(str, data['rolls']))})"
         QApplication.clipboard().setText(text, QClipboard.Mode.Clipboard)
 
+    def _on_item_clicked(self, item: QListWidgetItem) -> None:
+        self._copy_item(item)
+        QToolTip.showText(QCursor.pos(), "Copied")
+
     # reroll ---------------------------------------------------------------
     def _reroll_item(self, item: QListWidgetItem) -> None:
         data = item.data(Qt.ItemDataRole.UserRole)
@@ -195,6 +202,23 @@ class RollHistoryPanel(QListWidget):
         total = sum(rolls) + mod
         text = f"{data['notation']} = {total} ({', '.join(map(str, rolls))})"
         self.add_entry(text)
+
+    def _animate_in(self, w: QWidget) -> None:  # pragma: no cover - visual effect
+        fade = QPropertyAnimation(w, b"windowOpacity", w)
+        fade.setDuration(200)
+        fade.setStartValue(0.0)
+        fade.setEndValue(1.0)
+        fade.setEasingCurve(QEasingCurve.Type.OutCubic)
+        slide = QPropertyAnimation(w, b"pos", w)
+        p = w.pos()
+        slide.setDuration(200)
+        slide.setStartValue(p + QPoint(0, 6))
+        slide.setEndValue(p)
+        slide.setEasingCurve(QEasingCurve.Type.OutCubic)
+        group = QParallelAnimationGroup(w)
+        group.addAnimation(fade)
+        group.addAnimation(slide)
+        group.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
 
     # ---------- autoscroll internals ----------
     def _is_at_bottom(self) -> bool:

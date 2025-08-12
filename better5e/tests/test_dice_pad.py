@@ -104,7 +104,15 @@ def test_notation_and_state(qapp):
     assert panel.roll_btn.isEnabled()
     assert panel.get_notation() == "2d8 - 5"
     assert panel.state() == ({8: 2}, -5)
+    panel.advBtn.setChecked(True)
+    received = []
+    panel.rollRequested.connect(lambda d, m, f: received.append((d, m, f)))
+    panel.roll()
+    assert received[0][2] == {"adv": True, "dis": False}
+    chips = [panel.selectedRow.itemAt(i).widget().text() for i in range(panel.selectedRow.count() - 1)]
+    assert any(text.startswith("d8") for text in chips)
     panel.reset()
     assert panel.get_notation() == ""
+    assert panel.selectedRow.count() == 1
     assert not panel.roll_btn.isEnabled()
     panel.roll()  # no dice selected: early return

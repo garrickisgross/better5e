@@ -14,7 +14,7 @@ import pytest
 from better5e.UI.main_screen.components.roll_history import RollHistoryPanel
 from better5e.UI.main_screen.components.dice_options import DiceOptionsPanel
 from better5e.UI.main_screen.components.section_header import SectionHeader
-from better5e.UI.main_screen.components.card_grid import CardGrid
+from better5e.UI.main_screen.components.card_grid import CardGrid, GridCard
 from better5e.UI.main_screen.components.homebrew_panel import HomebrewPanel
 from better5e.UI.main_screen.main_screen import MainScreen
 
@@ -34,7 +34,7 @@ def test_dice_roll_updates_history(qapp, monkeypatch):
     assert history.count() == 0
     dice = DiceOptionsPanel()
 
-    def handler(dice_map, mod):
+    def handler(dice_map, mod, _flags):
         rolls: list[int] = []
         total = mod
         parts = []
@@ -62,6 +62,8 @@ def test_dice_roll_updates_history(qapp, monkeypatch):
     assert card.notation_label.text() == "2d4 + 1d6 + 3"
     assert card.total_label.text() == "11"
     assert [lab.text() for lab in card.roll_labels] == ["1", "2", "5"]
+    history.itemClicked.emit(item)
+    assert QApplication.clipboard().text() == "2d4 + 1d6 + 3 = 11 (1, 2, 5)"
     history.clearHistory()
     assert history.count() == 0
     history._on_scroll_value_changed(0)
@@ -124,15 +126,24 @@ def test_section_header_and_card_grid(qapp):
     assert emitted == [True]
 
     grid = CardGrid(["A", "B", "C"])
-    assert grid.layout().count() == 3
+    assert grid.grid.count() == 3
+    empty = CardGrid([])
+    assert empty.grid.count() == 1
+    gc = GridCard("X")
+    opened = []
+    gc.opened.connect(opened.append)
+    gc.actions_w.show()
+    btn = gc.actions_w.layout().itemAt(0).widget()
+    btn.click()
+    assert opened == [None]
 
 
 def test_homebrew_panel_signals(qapp):
     panel = HomebrewPanel()
     received = []
     panel.openHomebrew.connect(received.append)
-    # trigger first button
-    btn = panel.layout().itemAt(1).widget()
+    wrap = panel.layout().itemAt(2).widget()
+    btn = wrap.layout().itemAt(0).widget()
     btn.click()
     assert received == ["feature"]
 
@@ -152,7 +163,8 @@ def test_main_screen_signal_propagation(qapp, monkeypatch):
     screen.characters_create.click()
     screen.campaigns_header.button.click()
     screen.campaigns_create.click()
-    hb_btn = screen.homebrew_panel.layout().itemAt(2).widget()
+    wrap = screen.homebrew_panel.layout().itemAt(5).widget()
+    hb_btn = wrap.layout().itemAt(0).widget()
     hb_btn.click()
 
     assert signals == ["see_chars", "new_char", "see_camps", "new_camp", "class"]
@@ -172,7 +184,7 @@ def test_main_screen_signal_propagation(qapp, monkeypatch):
     # explicit critical roll triggers crit property via _on_roll_requested
     seq = iter([20])
     monkeypatch.setattr(random, "randint", lambda a, b: next(seq))
-    screen._on_roll_requested({20: 1}, 0)
+    screen._on_roll_requested({20: 1}, 0, {})
     item = screen.roll_history.item(2)
     card = screen.roll_history.itemWidget(item)
     assert card.property("crit") is True

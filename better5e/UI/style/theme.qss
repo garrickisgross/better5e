@@ -4,21 +4,28 @@ QMainWindow, QWidget {
     background-color: $bg;
     color: $text;
     font-family: $font_family;
-    font-size: 13px;
+    font-size: 14px;
 }
+
+*:focus { outline: none; }
+.QWidget:focus-within, QPushButton:focus, QLineEdit:focus {
+  border-color: $accent;
+  box-shadow: 0 0 0 2px rgba($accent_rgb, .35);
+}
+
+QSplitter::handle { background: $surfaceAlt; border: 1px solid $border; }
+QSplitter::handle:hover { background: $border; }
 
 /* Card container */
 QFrame#Card {
-    background-color: $surface;
-    border: 1px solid $border;
-    border-radius: ${radius_md}px;
-    padding: ${space_lg}px;
-    transition: background 0.2s, border 0.2s;
+    border-radius: 14px;
+    padding: 12px;
+    background: $surfaceAlt;
+    border:1px solid $border;
 }
-QFrame#Card:hover {
-    background-color: $surfaceAlt;
-    border: 1px solid $accent;
-}
+QFrame#Card:hover { border-color:$accent; }
+QWidget#CardActions { margin-top:8px; opacity:0; }
+QFrame#Card:hover QWidget#CardActions { opacity:1; }
 
 /* Buttons */
 QPushButton {
@@ -119,8 +126,8 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
 
 /* Section headers */
 [class="SectionHeader"] QLabel {
-    font-size: 18px;
-    font-weight: bold;
+    font-size: 20px;
+    font-weight: 700;
     color: $text;
 }
 [class="SectionHeader"] QPushButton {
@@ -128,11 +135,14 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
 }
 
 QLabel#SectionHeader {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: $text;
   margin-bottom: 4px;
 }
+
+QLabel[class~="subhead"] { font-size:13px; color:$mutedText; margin:6px 4px; text-transform:uppercase; letter-spacing:.06em; }
+QLabel[class~="caption"] { font-size:12px; color:$mutedText; }
 
 /* QGroupBox styling */
 QGroupBox {
@@ -180,12 +190,14 @@ QWidget#RollCard[crit="true"] QLabel#RollTotal {
 }
 
 QLabel[class~="chip"] {
-    padding: 2px 6px;
-    border-radius: 8px;
+    padding: 2px 8px;
+    border-radius: 10px;
     border: 1px solid $border;
-    background: rgba(255,255,255,0.04);
-    font-size: 11px;
+    background: rgba(255,255,255,0.05);
+    font-weight:600;
+    font-size:12px;
 }
+QLabel[class~="chip"]:hover { border-color:$accent; }
 
 /* Dice buttons */
 QPushButton[class~="die"] {
