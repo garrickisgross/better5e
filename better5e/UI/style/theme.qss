@@ -88,19 +88,15 @@ QListWidget, QListView, QScrollArea {
     border: 1px solid $border;
     border-radius: ${radius_md}px;
 }
-QListWidget::item, QListView::item {
-    padding: ${space_sm}px;
-    border-radius: ${radius_sm}px;
+QListWidget::item {
+    background: transparent;
+    border: none;
+    margin: 0;
+    padding: 0;
 }
 QListWidget::item:selected, QListView::item:selected {
     background-color: $accent;
     color: #ffffff;
-}
-QListWidget::item:hover, QListView::item:hover {
-    background-color: $surfaceAlt;
-}
-QListWidget::item:alternate, QListView::item:alternate {
-    background-color: $surfaceAlt;
 }
 
 /* Scrollbars */
@@ -145,29 +141,41 @@ QGroupBox::title {
 }
 
 /* Roll cards */
-QFrame#Card, QWidget#RollCard {
-    background-color: $surfaceAlt;
+QWidget#RollCard, QFrame#RollCard {
+    background: $surfaceAlt;
     border: 1px solid $border;
-    border-radius: ${radius_md}px;
+    border-radius: 12px;
     padding: 10px 12px;
 }
 QWidget#RollCard:hover {
     border-color: $accent;
 }
-QLabel#RollNotation {
-    font-family: $font_mono;
-    font-size: 13px;
-    color: $text;
+QLabel#RollNotation, QLabel#RollTotal, QLabel#RollMeta {
+    background: transparent;
 }
 QLabel#RollTotal {
-    font-size: 20px;
-    font-weight: 700;
+    font-size: 22px;
+    font-weight: 800;
+    color: $text;
+}
+QLabel#RollNotation {
+    font-family: $font_mono;
+    opacity: .9;
     color: $text;
 }
 QLabel#RollMeta {
     font-size: 12px;
     color: $mutedText;
+    margin-top: 6px;
 }
 QWidget#RollCard[crit="true"] QLabel#RollTotal {
     color: $success;
+}
+
+QLabel[class~="chip"] {
+    padding: 2px 6px;
+    border-radius: 8px;
+    border: 1px solid $border;
+    background: rgba(255,255,255,0.04);
+    font-size: 11px;
 }

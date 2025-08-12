@@ -20,10 +20,22 @@ from PyQt6.QtWidgets import (
 from better5e.UI.style.theme import add_shadow
 
 
+def _fmt_time(ts: datetime) -> str:
+    import sys
+
+    same_day = ts.date() == datetime.now(ts.tzinfo).date()
+    if same_day:
+        fmt = "%#I:%M %p" if sys.platform == "win32" else "%-I:%M %p"
+        return ts.strftime(fmt).lstrip("0")
+    if ts.year == datetime.now(ts.tzinfo).year:
+        return ts.strftime("%b %d · %I:%M %p").lstrip("0")
+    return ts.strftime("%b %d, %Y")
+
+
 class RollCard(QWidget):
     """Widget representing a single dice roll."""
 
-    def __init__(self, notation: str, total: int, details: str, ts: datetime) -> None:
+    def __init__(self, notation: str, total: int, rolls: list[int], ts: datetime) -> None:
         super().__init__()
         self.setObjectName("RollCard")
         self.timestamp = ts
@@ -45,13 +57,24 @@ class RollCard(QWidget):
         row.addWidget(total_lbl, alignment=Qt.AlignmentFlag.AlignRight)
         layout.addLayout(row)
 
-        meta_lbl = QLabel(details)
-        meta_lbl.setObjectName("RollMeta")
-        layout.addWidget(meta_lbl)
+        chips = QHBoxLayout()
+        chips.setSpacing(6)
+        roll_labels: list[QLabel] = []
+        for r in rolls:
+            lab = QLabel(str(r))
+            lab.setProperty("class", "chip")
+            chips.addWidget(lab)
+            roll_labels.append(lab)
+        chips.addStretch(1)
+        time_lbl = QLabel(_fmt_time(ts))
+        time_lbl.setObjectName("RollMeta")
+        chips.addWidget(time_lbl)
+        layout.addLayout(chips)
 
         self.notation_label = notation_lbl
         self.total_label = total_lbl
-        self.meta_label = meta_lbl
+        self.meta_label = time_lbl
+        self.roll_labels = roll_labels
 
 
 class RollHistoryPanel(QListWidget):
@@ -80,9 +103,8 @@ class RollHistoryPanel(QListWidget):
         rolls = [int(r.strip()) for r in rolls_str.split(',')]
         notation = f"{count_i}d{sides_i}{mod_i:+d}"
         ts = datetime.now()
-        details = f"({', '.join(map(str, rolls))}) • {ts.strftime('%Y-%m-%d %H:%M')}"
 
-        card = RollCard(notation, total_i, details, ts)
+        card = RollCard(notation, total_i, rolls, ts)
         if count_i == 1 and sides_i == 20 and rolls[0] == 20:
             card.setProperty("crit", True)
 

@@ -6,6 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import os
 import random
+from datetime import datetime
 
 from PyQt6.QtWidgets import QApplication, QMenu
 import pytest
@@ -44,7 +45,7 @@ def test_dice_roll_updates_history(qapp, monkeypatch):
     card = history.itemWidget(item)
     assert card.notation_label.text() == "2d4+3"
     assert card.total_label.text() == "6"
-    assert "1, 2" in card.meta_label.text()
+    assert [lab.text() for lab in card.roll_labels] == ["1", "2"]
     history.clear_history()
     assert history.count() == 0
 
@@ -136,3 +137,18 @@ def test_main_screen_signal_propagation(qapp, monkeypatch):
     screen.dice_panel.die_box.setCurrentText("d6")
     screen.dice_panel.roll()
     assert screen.roll_history.count() == 1
+
+
+def test_fmt_time_variants():
+    from better5e.UI.main_screen.components.roll_history import _fmt_time
+
+    now = datetime.now()
+    assert ":" in _fmt_time(now)
+
+    same_year = datetime(now.year, 8, 11, 19, 12)
+    if same_year.date() == now.date():
+        same_year = datetime(now.year, 8, 12, 19, 12)
+    assert "·" in _fmt_time(same_year)
+
+    other_year = datetime(now.year - 1, 8, 11, 19, 12)
+    assert "," in _fmt_time(other_year)
