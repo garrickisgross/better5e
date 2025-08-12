@@ -143,3 +143,31 @@ QGroupBox::title {
     padding: 0 ${space_sm}px;
     color: $mutedText;
 }
+
+/* Roll cards */
+QFrame#Card, QWidget#RollCard {
+    background-color: $surfaceAlt;
+    border: 1px solid $border;
+    border-radius: ${radius_md}px;
+    padding: 10px 12px;
+}
+QWidget#RollCard:hover {
+    border-color: $accent;
+}
+QLabel#RollNotation {
+    font-family: $font_mono;
+    font-size: 13px;
+    color: $text;
+}
+QLabel#RollTotal {
+    font-size: 20px;
+    font-weight: 700;
+    color: $text;
+}
+QLabel#RollMeta {
+    font-size: 12px;
+    color: $mutedText;
+}
+QWidget#RollCard[crit="true"] QLabel#RollTotal {
+    color: $success;
+}
