@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import random
-import re
 from datetime import datetime
 
 from PyQt6.QtCore import Qt, QPoint, QSize
@@ -80,8 +79,6 @@ class RollCard(QWidget):
 class RollHistoryPanel(QListWidget):
     """List widget showing past dice rolls."""
 
-    _ROLL_RE = re.compile(r"(\d+)d(\d+)([+-]\d+) = (\d+) \(([^)]+)\)")
-
     def __init__(self) -> None:
         super().__init__()
         self.setSpacing(8)
@@ -91,21 +88,38 @@ class RollHistoryPanel(QListWidget):
         self.customContextMenuRequested.connect(self._show_context_menu)
         self.itemDoubleClicked.connect(self._reroll_item)
 
+    def _parse_notation(self, notation: str) -> tuple[dict[int, int], int]:
+        dice: dict[int, int] = {}
+        mod = 0
+        parts = notation.replace("-", "+-").split("+")
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
+            if "d" in part:
+                count_str, sides_str = part.split("d", 1)
+                dice[int(sides_str)] = dice.get(int(sides_str), 0) + int(count_str)
+            else:
+                mod += int(part)
+        return dice, mod
+
     def add_entry(self, text: str) -> None:
         """Append a roll result to the list."""
-        match = self._ROLL_RE.fullmatch(text.strip())
-        if not match:
+        text = text.strip()
+        if " = " not in text or "(" not in text or not text.endswith(")"):
             return
-
-        count, sides, mod, total, rolls_str = match.groups()
-        count_i, sides_i, mod_i = int(count), int(sides), int(mod)
-        total_i = int(total)
-        rolls = [int(r.strip()) for r in rolls_str.split(',')]
-        notation = f"{count_i}d{sides_i}{mod_i:+d}"
+        notation_part, rest = text.split(" = ", 1)
+        total_part, rolls_part = rest.split(" (", 1)
+        try:
+            total_i = int(total_part)
+        except ValueError:
+            return
+        rolls = [int(r.strip()) for r in rolls_part[:-1].split(",")]
+        dice_map, mod = self._parse_notation(notation_part)
         ts = datetime.now()
 
-        card = RollCard(notation, total_i, rolls, ts)
-        if count_i == 1 and sides_i == 20 and rolls[0] == 20:
+        card = RollCard(notation_part, total_i, rolls, ts)
+        if dice_map.get(20) == 1 and len(rolls) == sum(dice_map.values()) and rolls[0] == 20:
             card.setProperty("crit", True)
 
         add_shadow(card, blur=18, y=3)
@@ -113,12 +127,11 @@ class RollHistoryPanel(QListWidget):
         item = QListWidgetItem()
         item.setSizeHint(QSize(0, 72))
         item.setData(Qt.ItemDataRole.UserRole, {
-            "notation": notation,
+            "notation": notation_part,
             "total": total_i,
             "rolls": rolls,
-            "mod": mod_i,
-            "sides": sides_i,
-            "count": count_i,
+            "mod": mod,
+            "dice": dice_map,
         })
         self.addItem(item)
         self.setItemWidget(item, card)
@@ -152,8 +165,11 @@ class RollHistoryPanel(QListWidget):
     # reroll ---------------------------------------------------------------
     def _reroll_item(self, item: QListWidgetItem) -> None:
         data = item.data(Qt.ItemDataRole.UserRole)
-        count, sides, mod = data["count"], data["sides"], data["mod"]
-        rolls = [random.randint(1, sides) for _ in range(count)]
+        dice: dict[int, int] = data["dice"]
+        mod = data["mod"]
+        rolls: list[int] = []
+        for sides, count in dice.items():
+            rolls.extend(random.randint(1, sides) for _ in range(count))
         total = sum(rolls) + mod
-        text = f"{count}d{sides}{mod:+d} = {total} ({', '.join(map(str, rolls))})"
+        text = f"{data['notation']} = {total} ({', '.join(map(str, rolls))})"
         self.add_entry(text)

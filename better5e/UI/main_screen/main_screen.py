@@ -1,3 +1,5 @@
+import random
+
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
     QHBoxLayout,
@@ -40,7 +42,7 @@ class MainScreen(BasePage):
         self.roll_history = RollHistoryPanel()
         left.addWidget(self.roll_history)
         self.dice_panel = DiceOptionsPanel()
-        self.dice_panel.rollMade.connect(self.roll_history.add_entry)
+        self.dice_panel.rollRequested.connect(self._on_roll_requested)
         left.addWidget(self.dice_panel)
         left.setStretch(0, 1)
         columns.addLayout(left)
@@ -80,3 +82,20 @@ class MainScreen(BasePage):
         self.homebrew_panel = HomebrewPanel()
         self.homebrew_panel.openHomebrew.connect(self.openHomebrew.emit)
         columns.addWidget(self.homebrew_panel)
+
+    # roll handling -----------------------------------------------------
+    def _on_roll_requested(self, dice: dict[int, int], modifier: int) -> None:
+        rolls: list[int] = []
+        notation_parts: list[str] = []
+        total = modifier
+        for sides, count in dice.items():
+            part_rolls = [random.randint(1, sides) for _ in range(count)]
+            rolls.extend(part_rolls)
+            total += sum(part_rolls)
+            notation_parts.append(f"{count}d{sides}")
+        notation = " + ".join(notation_parts)
+        if modifier:
+            sign = "+" if modifier > 0 else "-"
+            notation = f"{notation} {sign} {abs(modifier)}" if notation else f"{modifier}"
+        text = f"{notation.strip()} = {total} ({', '.join(map(str, rolls))})"
+        self.roll_history.add_entry(text)

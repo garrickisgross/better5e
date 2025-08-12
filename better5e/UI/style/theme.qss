@@ -179,3 +179,41 @@ QLabel[class~="chip"] {
     background: rgba(255,255,255,0.04);
     font-size: 11px;
 }
+
+/* Dice buttons */
+QPushButton[class~="die"] {
+  min-width: 72px; min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: $surfaceAlt;
+  border: 1px solid $border;
+  font-weight: 600;
+}
+QPushButton[class~="die"]:hover { border-color: $accent; }
+QPushButton[class~="die"]:pressed { transform: translateY(1px); }
+
+QPushButton[class~="die"] QLabel#DieBadge {
+  background: $accent;
+  color: white;
+  border-radius: 9px;
+  min-width: 18px; min-height: 18px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Modifier control */
+QWidget#ModifierControl { background: transparent; }
+QWidget#ModifierControl QLineEdit {
+  min-height: 36px; font-size: 14px; text-align: center;
+  border-radius: 10px; border: 1px solid $border; background: $surfaceAlt; color: $text;
+}
+QWidget#ModifierControl QToolButton {
+  min-width: 36px; min-height: 36px;
+  border-radius: 10px; border: 1px solid $border; background: $surfaceAlt; color: $text;
+}
+QWidget#ModifierControl QToolButton:hover { border-color: $accent; }
+
+/* Actions */
+QPushButton#ResetBtn { margin-top: 8px; }
+QPushButton#RollBtn  { margin-top: 6px; }
