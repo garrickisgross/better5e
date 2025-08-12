@@ -154,11 +154,10 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     subcontrol-origin: margin;
 }
 
-/* Hairline divider at the very top of each section */
+/* Section container */
 QFrame#Section {
-  border-top: 1px solid $border;
+  border: 0;
   border-radius: 0;
-  padding-top: 12px;
   background: transparent;
 }
 
