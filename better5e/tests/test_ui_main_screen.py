@@ -4,9 +4,10 @@ import types
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+import os
 import random
 
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QMenu
 import pytest
 
 from better5e.UI.main_screen.components.roll_history import RollHistoryPanel
@@ -19,6 +20,7 @@ from better5e.UI.main_screen.main_screen import MainScreen
 
 @pytest.fixture(scope="session")
 def qapp():
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     app = QApplication.instance()
     if app is None:
         app = QApplication([])
@@ -27,6 +29,8 @@ def qapp():
 
 def test_dice_roll_updates_history(qapp, monkeypatch):
     history = RollHistoryPanel()
+    history.add_entry("bad")
+    assert history.count() == 0
     dice = DiceOptionsPanel()
     dice.rollMade.connect(history.add_entry)
     dice.die_box.setCurrentText("d4")
@@ -36,8 +40,50 @@ def test_dice_roll_updates_history(qapp, monkeypatch):
     monkeypatch.setattr(random, "randint", lambda a, b: next(seq))
     dice.roll()
     assert history.count() == 1
-    assert history.item(0).text() == "2d4+3 = 6 (1, 2)"
+    item = history.item(0)
+    card = history.itemWidget(item)
+    assert card.notation_label.text() == "2d4+3"
+    assert card.total_label.text() == "6"
+    assert "1, 2" in card.meta_label.text()
     history.clear_history()
+    assert history.count() == 0
+
+
+def test_roll_history_context_and_reroll(qapp, monkeypatch):
+    history = RollHistoryPanel()
+    history.add_entry("1d20+0 = 20 (20)")
+    item = history.item(0)
+    card = history.itemWidget(item)
+    assert card.property("crit") is True
+
+    history.show()
+    qapp.processEvents()
+    pos = history.visualItemRect(item).center()
+
+    def fake_exec_copy(menu, _):
+        return menu.actions()[0]
+
+    monkeypatch.setattr(QMenu, "exec", fake_exec_copy)
+    history._show_context_menu(pos)
+    assert QApplication.clipboard().text() == "1d20+0 = 20 (20)"
+
+    seq = iter([5])
+    monkeypatch.setattr(random, "randint", lambda a, b: next(seq))
+    history._reroll_item(item)
+    assert history.count() == 2
+
+    def fake_exec_delete(menu, _):
+        return menu.actions()[1]
+
+    monkeypatch.setattr(QMenu, "exec", fake_exec_delete)
+    history._show_context_menu(pos)
+    assert history.count() == 1
+
+    def fake_exec_clear(menu, _):
+        return menu.actions()[3]
+
+    monkeypatch.setattr(QMenu, "exec", fake_exec_clear)
+    history._show_context_menu(pos)
     assert history.count() == 0
 
 
