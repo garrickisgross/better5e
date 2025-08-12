@@ -31,7 +31,7 @@ def test_chrome_basic_interactions(qapp, monkeypatch):
     win.set_content(new_content)
 
     tb = win.titleBar
-    assert tb.btnMin.size().width() == 42 and tb.btnMin.size().height() == 32
+    assert tb.btnMin.size().width() == 52 and tb.btnMin.size().height() == 40
     assert tb.btnMin.font().pixelSize() == 16
     assert tb.title.font().pixelSize() == 24
     assert tb.layout().contentsMargins().left() == gutter()
