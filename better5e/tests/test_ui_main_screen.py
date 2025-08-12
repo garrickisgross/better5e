@@ -33,25 +33,44 @@ def test_dice_roll_updates_history(qapp, monkeypatch):
     history.add_entry("bad")
     assert history.count() == 0
     dice = DiceOptionsPanel()
-    dice.rollMade.connect(history.add_entry)
-    dice.die_box.setCurrentText("d4")
-    dice.count_spin.setValue(2)
-    dice.mod_spin.setValue(3)
-    seq = iter([1, 2])
+
+    def handler(dice_map, mod):
+        rolls: list[int] = []
+        total = mod
+        parts = []
+        for sides, count in dice_map.items():
+            r = [random.randint(1, sides) for _ in range(count)]
+            rolls.extend(r)
+            total += sum(r)
+            parts.append(f"{count}d{sides}")
+        notation = " + ".join(parts)
+        if mod:
+            sign = "+" if mod > 0 else "-"
+            notation = f"{notation} {sign} {abs(mod)}" if notation else f"{mod}"
+        history.add_entry(f"{notation} = {total} ({', '.join(map(str, rolls))})")
+
+    dice.rollRequested.connect(handler)
+    dice.dice[4].count = 2
+    dice.dice[6].count = 1
+    dice.mod_ctrl.setValue(3)
+    seq = iter([1, 2, 5])
     monkeypatch.setattr(random, "randint", lambda a, b: next(seq))
     dice.roll()
     assert history.count() == 1
     item = history.item(0)
     card = history.itemWidget(item)
-    assert card.notation_label.text() == "2d4+3"
-    assert card.total_label.text() == "6"
-    assert [lab.text() for lab in card.roll_labels] == ["1", "2"]
+    assert card.notation_label.text() == "2d4 + 1d6 + 3"
+    assert card.total_label.text() == "11"
+    assert [lab.text() for lab in card.roll_labels] == ["1", "2", "5"]
     history.clear_history()
     assert history.count() == 0
 
 
 def test_roll_history_context_and_reroll(qapp, monkeypatch):
     history = RollHistoryPanel()
+    assert history._parse_notation("+3") == ({}, 3)
+    history.add_entry("1d4 = bad (1)")
+    assert history.count() == 0
     history.add_entry("1d20+0 = 20 (20)")
     item = history.item(0)
     card = history.itemWidget(item)
@@ -86,6 +105,14 @@ def test_roll_history_context_and_reroll(qapp, monkeypatch):
     monkeypatch.setattr(QMenu, "exec", fake_exec_clear)
     history._show_context_menu(pos)
     assert history.count() == 0
+
+    def fake_exec_none(menu, _):
+        return None
+
+    history.add_entry("1d4 = 2 (2)")
+    monkeypatch.setattr(QMenu, "exec", fake_exec_none)
+    history._show_context_menu(history.visualItemRect(history.item(0)).center())
+    assert history.count() == 1
 
 
 def test_section_header_and_card_grid(qapp):
@@ -130,13 +157,16 @@ def test_main_screen_signal_propagation(qapp, monkeypatch):
     assert signals == ["see_chars", "new_char", "see_camps", "new_camp", "class"]
 
     # roll wiring
-    seq = iter([4])
+    seq = iter([4, 3])
     monkeypatch.setattr(random, "randint", lambda a, b: next(seq))
-    screen.dice_panel.count_spin.setValue(1)
-    screen.dice_panel.mod_spin.setValue(0)
-    screen.dice_panel.die_box.setCurrentText("d6")
+    screen.dice_panel.dice[6].count = 1
+    screen.dice_panel.mod_ctrl.setValue(0)
     screen.dice_panel.roll()
-    assert screen.roll_history.count() == 1
+    screen.dice_panel.dice[6].count = 0
+    screen.dice_panel.dice[4].count = 1
+    screen.dice_panel.mod_ctrl.setValue(2)
+    screen.dice_panel.roll()
+    assert screen.roll_history.count() == 2
 
 
 def test_fmt_time_variants():

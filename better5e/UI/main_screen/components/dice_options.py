@@ -1,55 +1,160 @@
-import random
+from __future__ import annotations
 
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtGui import QKeySequence, QShortcut
+from typing import Dict, Tuple
+
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QIntValidator, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QWidget,
-    QComboBox,
-    QSpinBox,
-    QPushButton,
+    QGridLayout,
+    QVBoxLayout,
     QHBoxLayout,
+    QPushButton,
+    QToolButton,
+    QLineEdit,
 )
 
+from better5e.UI.main_screen.components.die_button import DieButton
 
-class DiceOptionsPanel(QWidget):
-    """Controls for choosing dice, count and modifier."""
 
-    rollMade = pyqtSignal(str)
+class ModifierControl(QWidget):
+    """Numeric modifier widget with +/− buttons."""
+
+    valueChanged = pyqtSignal(int)
 
     def __init__(self) -> None:
         super().__init__()
+        self.setObjectName("ModifierControl")
+        self._val = 0
+
+        minus = QToolButton()
+        minus.setText("-")
+        plus = QToolButton()
+        plus.setText("+")
+        edit = QLineEdit("0")
+        edit.setValidator(QIntValidator(-999, 999, self))
+        edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
         layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+        layout.addWidget(minus)
+        layout.addWidget(edit, 1)
+        layout.addWidget(plus)
 
-        self.die_box = QComboBox()
-        self.die_box.addItems(["d4", "d6", "d8", "d10", "d12", "d20", "d100"])
-        layout.addWidget(self.die_box)
+        minus.clicked.connect(lambda: self.setValue(self._val - 1))
+        plus.clicked.connect(lambda: self.setValue(self._val + 1))
+        edit.textChanged.connect(self._on_text_changed)
 
-        self.count_spin = QSpinBox()
-        self.count_spin.setRange(1, 10)
-        layout.addWidget(self.count_spin)
+        self.minus = minus
+        self.plus = plus
+        self.edit = edit
 
-        self.mod_spin = QSpinBox()
-        self.mod_spin.setRange(-20, 20)
-        layout.addWidget(self.mod_spin)
+    def _on_text_changed(self, text: str) -> None:
+        try:
+            val = int(text)
+        except ValueError:
+            val = 0
+        self._val = max(-999, min(999, val))
+        if self.edit.text() != str(self._val):
+            self.edit.setText(str(self._val))
+        self.valueChanged.emit(self._val)
 
-        self.roll_btn = QPushButton("Roll")
-        self.roll_btn.setProperty("class", "primary")
-        layout.addWidget(self.roll_btn)
+    def setValue(self, value: int) -> None:
+        value = max(-999, min(999, value))
+        if value == self._val:
+            return
+        self._val = value
+        self.edit.setText(str(value))
+        self.valueChanged.emit(value)
 
-        self.roll_btn.clicked.connect(self.roll)
+    @property
+    def value(self) -> int:
+        return self._val
 
-        shortcut = QShortcut(QKeySequence("R"), self)
-        shortcut.activated.connect(self.roll)
-        self._shortcut = shortcut  # keep reference
+
+class DiceOptionsPanel(QWidget):
+    """Modern dice pad allowing multiple dice selection."""
+
+    rollRequested = pyqtSignal(dict, int)
+    resetRequested = pyqtSignal()
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        main = QHBoxLayout(self)
+        main.setSpacing(12)
+
+        left_col = QVBoxLayout()
+        main.addLayout(left_col, 1)
+
+        grid = QGridLayout()
+        grid.setSpacing(6)
+        left_col.addLayout(grid)
+
+        self.dice: Dict[int, DieButton] = {}
+        order = [4, 6, 8, 10, 12, 20, 100]
+        positions = [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2)]
+        for pos, sides in zip(positions, order):
+            btn = DieButton(sides)
+            btn.countChanged.connect(self._update_roll_enabled)
+            grid.addWidget(btn, *pos)
+            self.dice[sides] = btn
+
+        self.mod_ctrl = ModifierControl()
+        left_col.addWidget(self.mod_ctrl)
+
+        actions = QVBoxLayout()
+        main.addLayout(actions)
+
+        reset_btn = QPushButton("Reset")
+        reset_btn.setObjectName("ResetBtn")
+        reset_btn.setProperty("class", "secondary")
+        roll_btn = QPushButton("Roll")
+        roll_btn.setObjectName("RollBtn")
+        roll_btn.setProperty("class", "primary")
+        roll_btn.setEnabled(False)
+
+        actions.addWidget(reset_btn)
+        actions.addWidget(roll_btn)
+        actions.addStretch(1)
+
+        reset_btn.clicked.connect(self.reset)
+        roll_btn.clicked.connect(self.roll)
+
+        QShortcut(QKeySequence("R"), self, activated=self.roll)
+        QShortcut(QKeySequence("Esc"), self, activated=self.reset)
+
+        self.roll_btn = roll_btn
+        self.reset_btn = reset_btn
+
+    # utilities ----------------------------------------------------------
+    def _update_roll_enabled(self, *_: int) -> None:
+        total = sum(btn.count for btn in self.dice.values())
+        self.roll_btn.setEnabled(total > 0)
+
+    def reset(self) -> None:
+        for btn in self.dice.values():
+            btn.count = 0
+        self.mod_ctrl.setValue(0)
+        self._update_roll_enabled()
+        self.resetRequested.emit()
 
     def roll(self) -> None:
-        """Roll dice according to current settings and emit result string."""
-        sides = int(self.die_box.currentText()[1:])
-        count = self.count_spin.value()
-        mod = self.mod_spin.value()
-        results = [random.randint(1, sides) for _ in range(count)]
-        total = sum(results) + mod
-        msg = (
-            f"{count}d{sides}{mod:+d} = {total} (" + ", ".join(map(str, results)) + ")"
-        )
-        self.rollMade.emit(msg)
+        dice = {sides: btn.count for sides, btn in self.dice.items() if btn.count}
+        if not dice:
+            return
+        self.rollRequested.emit(dice, self.mod_ctrl.value)
+
+    def state(self) -> Tuple[Dict[int, int], int]:
+        dice = {sides: btn.count for sides, btn in self.dice.items() if btn.count}
+        return dice, self.mod_ctrl.value
+
+    def get_notation(self) -> str:
+        dice, mod = self.state()
+        parts = [f"{cnt}d{sides}" for sides, cnt in dice.items()]
+        notation = " + ".join(parts)
+        if mod:
+            sign = "+" if mod > 0 else "-"
+            notation = f"{notation} {sign} {abs(mod)}" if notation else f"{mod}"
+        return notation.strip()
