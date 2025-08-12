@@ -34,18 +34,25 @@ class ModifierControl(QWidget):
 
         minus = QToolButton()
         minus.setText("-")
+        minus.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         plus = QToolButton()
         plus.setText("+")
+        plus.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         edit = QLineEdit("0")
         edit.setValidator(QIntValidator(-999, 999, self))
         edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        edit.setFixedWidth(40)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        layout.setSpacing(8)
         layout.addWidget(minus)
-        layout.addWidget(edit, 1)
+        layout.addWidget(edit)
         layout.addWidget(plus)
+        layout.setStretch(0, 1)
+        layout.setStretch(2, 1)
+
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
         minus.clicked.connect(lambda: self.setValue(self._val - 1))
         plus.clicked.connect(lambda: self.setValue(self._val + 1))
@@ -101,21 +108,24 @@ class DiceOptionsPanel(QWidget):
         root.setSpacing(12)
 
         grid = QGridLayout()
-        grid.setHorizontalSpacing(12)
-        grid.setVerticalSpacing(12)
+        grid.setContentsMargins(0, 0, 0, 0)
+        grid.setSpacing(8)
         root.addLayout(grid)
+        root.setAlignment(grid, Qt.AlignmentFlag.AlignHCenter)
 
         self.die_buttons: dict[int, DieButton] = {}
         for i, sides in enumerate(DICE_SIDES):
             btn = DieButton(sides)
             btn.setToolTip("Coin flip (d2)" if sides == 2 else f"d{sides}")
+            btn.setFixedWidth(60)
             btn.countChanged.connect(self._update_roll_enabled)
             row, col = divmod(i, 4)
             grid.addWidget(btn, row, col)
             self.die_buttons[sides] = btn
 
         self.modifierControl = ModifierControl()
-        root.addWidget(self.modifierControl)
+        self.modifierControl.setFixedWidth(60 * 4 + 8 * 3)
+        root.addWidget(self.modifierControl, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         root.addItem(QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
