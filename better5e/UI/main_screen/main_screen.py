@@ -57,7 +57,7 @@ class MainScreen(BasePage):
         leftCol.setStretch(0, 1)
 
         leftPane.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
-        leftPane.setMaximumWidth(520)
+        leftPane.setMaximumWidth(400)
 
         # Center content ------------------------------------------------------
         centerPane = QScrollArea()
@@ -111,10 +111,10 @@ class MainScreen(BasePage):
         root.addWidget(centerPane)
         root.addWidget(rightPane)
 
-        # Middle column takes half the width (25/50/25 distribution)
-        root.setStretch(0, 1)
-        root.setStretch(1, 2)
-        root.setStretch(2, 1)
+        # Keep sidebars compact while center expands
+        root.setStretch(0, 0)
+        root.setStretch(1, 1)
+        root.setStretch(2, 0)
 
         self.homebrew_panel = rightPane
 
