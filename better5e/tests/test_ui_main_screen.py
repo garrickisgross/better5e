@@ -8,7 +8,7 @@ import os
 import random
 from datetime import datetime
 
-from PyQt6.QtWidgets import QApplication, QMenu
+from PyQt6.QtWidgets import QApplication, QMenu, QScrollArea, QFrame
 import pytest
 
 from better5e.UI.main_screen.components.roll_history import RollHistoryPanel
@@ -135,6 +135,14 @@ def test_homebrew_panel_signals(qapp):
     btn = panel.layout().itemAt(1).widget()
     btn.click()
     assert received == ["feature"]
+
+
+def test_main_screen_scroll_area_styling(qapp):
+    app = types.SimpleNamespace()
+    screen = MainScreen(app)
+    scroll = screen.findChild(QScrollArea, "MainScrollArea")
+    assert scroll is not None
+    assert scroll.frameShape() == QFrame.Shape.NoFrame
 
 
 def test_main_screen_signal_propagation(qapp, monkeypatch):

@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QScrollArea,
+    QFrame,
     QPushButton,
     QSizePolicy,
     QSpacerItem,
@@ -61,6 +62,8 @@ class MainScreen(BasePage):
 
         # Center content ------------------------------------------------------
         centerPane = QScrollArea()
+        centerPane.setObjectName("MainScrollArea")
+        centerPane.setFrameShape(QFrame.Shape.NoFrame)
         centerPane.setWidgetResizable(True)
 
         centerWidget = QWidget()

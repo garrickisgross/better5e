@@ -116,6 +116,15 @@ QListWidget, QListView, QScrollArea {
     border: 1px solid $border;
     border-radius: ${radius_md}px;
 }
+
+QScrollArea#MainScrollArea {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+QScrollArea#MainScrollArea > QWidget {
+  background: transparent;
+}
 QListWidget::item {
     background: transparent;
     border: none;
