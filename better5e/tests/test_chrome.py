@@ -35,6 +35,8 @@ def test_chrome_basic_interactions(qapp, monkeypatch):
     assert tb.btnMin.font().pixelSize() == 16
     assert tb.title.font().pixelSize() == 20
     assert tb.layout().contentsMargins().left() == gutter()
+    assert tb.title.contentsMargins().top() == 2
+    assert tb.title.indent() == 8
 
     tb.btnMin.click()
     tb.btnMax.click()

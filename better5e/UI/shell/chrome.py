@@ -17,7 +17,10 @@ from better5e.UI.style.tokens import gutter
 # Keep the title bar aligned with main screen gutters.  This value should
 # mirror the horizontal margins used in ``main_screen.py`` so the title text
 # lines up exactly with the app content (e.g. the dice box).
+# Outer gutter matches the main screen margins.  The title text is indented
+# slightly further to align with the dice panel content below.
 GUTTER = gutter() if callable(gutter) else 20
+TITLE_INDENT = 8
 
 
 class TitleBar(QFrame):
@@ -37,6 +40,8 @@ class TitleBar(QFrame):
         self.title = QLabel(title, self)
         self.title.setObjectName("AppTitle")
         self.title.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.title.setIndent(TITLE_INDENT)
+        self.title.setContentsMargins(0, 2, 0, 0)
         f = self.title.font()
         f.setPixelSize(20)
         f.setWeight(700)
