@@ -4,9 +4,11 @@ import types
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+import os
 import random
+from datetime import datetime
 
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QMenu, QLabel
 import pytest
 
 from better5e.UI.main_screen.components.roll_history import RollHistoryPanel
@@ -15,10 +17,12 @@ from better5e.UI.main_screen.components.section_header import SectionHeader
 from better5e.UI.main_screen.components.card_grid import CardGrid
 from better5e.UI.main_screen.components.homebrew_panel import HomebrewPanel
 from better5e.UI.main_screen.main_screen import MainScreen
+from better5e.UI.main_screen.components.roll_history import _fmt_time
 
 
 @pytest.fixture(scope="session")
 def qapp():
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     app = QApplication.instance()
     if app is None:
         app = QApplication([])
@@ -27,6 +31,8 @@ def qapp():
 
 def test_dice_roll_updates_history(qapp, monkeypatch):
     history = RollHistoryPanel()
+    history.add_entry("bad")
+    assert history.count() == 0
     dice = DiceOptionsPanel()
     dice.rollMade.connect(history.add_entry)
     dice.die_box.setCurrentText("d4")
@@ -36,8 +42,52 @@ def test_dice_roll_updates_history(qapp, monkeypatch):
     monkeypatch.setattr(random, "randint", lambda a, b: next(seq))
     dice.roll()
     assert history.count() == 1
-    assert history.item(0).text() == "2d4+3 = 6 (1, 2)"
+    item = history.item(0)
+    card = history.itemWidget(item)
+    assert card.notation_label.text() == "2d4+3"
+    assert card.total_label.text() == "6"
+    chips = [c.text() for c in card.findChildren(QLabel) if c.property("class") == "chip"]
+    assert chips == ["1", "2"]
+    assert card.meta_label.text()
     history.clear_history()
+    assert history.count() == 0
+
+
+def test_roll_history_context_and_reroll(qapp, monkeypatch):
+    history = RollHistoryPanel()
+    history.add_entry("1d20+0 = 20 (20)")
+    item = history.item(0)
+    card = history.itemWidget(item)
+    assert card.property("crit") is True
+
+    history.show()
+    qapp.processEvents()
+    pos = history.visualItemRect(item).center()
+
+    def fake_exec_copy(menu, _):
+        return menu.actions()[0]
+
+    monkeypatch.setattr(QMenu, "exec", fake_exec_copy)
+    history._show_context_menu(pos)
+    assert QApplication.clipboard().text() == "1d20+0 = 20 (20)"
+
+    seq = iter([5])
+    monkeypatch.setattr(random, "randint", lambda a, b: next(seq))
+    history._reroll_item(item)
+    assert history.count() == 2
+
+    def fake_exec_delete(menu, _):
+        return menu.actions()[1]
+
+    monkeypatch.setattr(QMenu, "exec", fake_exec_delete)
+    history._show_context_menu(pos)
+    assert history.count() == 1
+
+    def fake_exec_clear(menu, _):
+        return menu.actions()[3]
+
+    monkeypatch.setattr(QMenu, "exec", fake_exec_clear)
+    history._show_context_menu(pos)
     assert history.count() == 0
 
 
@@ -90,3 +140,15 @@ def test_main_screen_signal_propagation(qapp, monkeypatch):
     screen.dice_panel.die_box.setCurrentText("d6")
     screen.dice_panel.roll()
     assert screen.roll_history.count() == 1
+
+
+def test_fmt_time_variants():
+    now = datetime.now()
+    assert _fmt_time(now).endswith(now.strftime("%I:%M %p").lstrip("0"))
+    if now.month == 1 and now.day == 1:
+        mid = now.replace(month=2, day=1)
+    else:
+        mid = now.replace(month=1, day=1)
+    assert "·" in _fmt_time(mid)
+    old = now.replace(year=now.year - 1)
+    assert str(old.year) in _fmt_time(old)

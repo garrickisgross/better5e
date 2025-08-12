@@ -3,6 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+import os
 from PyQt6.QtWidgets import QApplication, QWidget
 import pytest
 
@@ -11,6 +12,7 @@ from better5e.UI.core.app import App
 
 @pytest.fixture(scope="session")
 def qapp():
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     app = QApplication.instance()
     if app is None:
         app = QApplication([])
