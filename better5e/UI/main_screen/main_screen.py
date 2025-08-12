@@ -1,4 +1,5 @@
 import random
+from datetime import datetime
 
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
@@ -11,11 +12,12 @@ from PyQt6.QtWidgets import (
 from typing import TYPE_CHECKING
 
 from better5e.UI.core.basepage import BasePage
-from better5e.UI.main_screen.components.roll_history import RollHistoryPanel
+from better5e.UI.main_screen.components.roll_history import RollHistoryPanel, RollCard
 from better5e.UI.main_screen.components.dice_options import DiceOptionsPanel
 from better5e.UI.main_screen.components.section_header import SectionHeader
 from better5e.UI.main_screen.components.card_grid import CardGrid
 from better5e.UI.main_screen.components.homebrew_panel import HomebrewPanel
+from better5e.UI.style.theme import add_shadow
 
 if TYPE_CHECKING:  # pragma: no cover - imported only for type checking
     from better5e.UI.core.app import App
@@ -97,5 +99,16 @@ class MainScreen(BasePage):
         if modifier:
             sign = "+" if modifier > 0 else "-"
             notation = f"{notation} {sign} {abs(modifier)}" if notation else f"{modifier}"
-        text = f"{notation.strip()} = {total} ({', '.join(map(str, rolls))})"
-        self.roll_history.add_entry(text)
+        ts = datetime.now()
+        card = RollCard(notation.strip(), total, rolls, ts)
+        if dice.get(20) == 1 and len(rolls) == sum(dice.values()) and rolls and rolls[0] == 20:
+            card.setProperty("crit", True)
+        add_shadow(card, blur=18, y=3)
+        data = {
+            "notation": notation.strip(),
+            "total": total,
+            "rolls": rolls,
+            "mod": modifier,
+            "dice": dice,
+        }
+        self.roll_history.add_roll_card(card, data)
