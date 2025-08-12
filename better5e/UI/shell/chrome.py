@@ -23,6 +23,7 @@ GUTTER = gutter() if callable(gutter) else 20
 TITLE_INDENT = 12
 
 
+
 class TitleBar(QFrame):
     """Custom title bar with app title on left and window controls on right."""
     HEIGHT = 40
@@ -44,6 +45,7 @@ class TitleBar(QFrame):
         self.title.setContentsMargins(0, 2, 0, 0)
         f = self.title.font()
         f.setPixelSize(24)
+
         f.setWeight(700)
         self.title.setFont(f)
 
