@@ -12,7 +12,8 @@
 - Style `CenterScroll` by targeting its `qt_scrollarea_viewport` so child widgets like the "Create New" buttons keep their own borders and backgrounds.
 - DiceOptionsPanel uses a 4×2 grid of dice buttons sized 88×44 with 10 px gutters. Modifier controls are centered with 40×40 ± buttons flanking a ~72 px number field.
 - HomebrewPanel titles should use `SectionHeader` with its 'See All' button hidden for consistent styling.
-
 - Homebrew creation pages use `SchemaFormBuilder` and `DropZone` for form generation and relations. Reuse these helpers for additional models.
 - `HomebrewPanel` requires the `App` instance so buttons can push creation pages directly.
+- Title bar action buttons (`WinBtnMin`, `WinBtnMax`, `WinBtnClose`) use a fixed size of 52×40 with ~2 px bottom padding to center the glyphs. Keep these dimensions in sync with `TitleBar.HEIGHT` so the buttons align with the app title.
+
 
