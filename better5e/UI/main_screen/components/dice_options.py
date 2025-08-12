@@ -84,8 +84,17 @@ class DiceOptionsPanel(QWidget):
     rollRequested = pyqtSignal(dict, int)
     resetRequested = pyqtSignal()
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, *, compact: bool = True, parent: QWidget | None = None) -> None:
+        """Create the dice options panel.
+
+        Parameters
+        ----------
+        compact:
+            Whether to use tighter vertical spacing for controls.
+        parent:
+            Optional parent widget.
+        """
+        super().__init__(parent)
 
         root = QVBoxLayout(self)
         root.setContentsMargins(8, 8, 8, 8)
@@ -105,8 +114,8 @@ class DiceOptionsPanel(QWidget):
             grid.addWidget(btn, row, col)
             self.die_buttons[sides] = btn
 
-        self.mod_ctrl = ModifierControl()
-        root.addWidget(self.mod_ctrl)
+        self.modifierControl = ModifierControl()
+        root.addWidget(self.modifierControl)
 
         root.addItem(QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
@@ -120,7 +129,6 @@ class DiceOptionsPanel(QWidget):
 
         for b in (reset_btn, roll_btn):
             b.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-            b.setMinimumHeight(44)
 
         root.addWidget(reset_btn)
         root.addWidget(roll_btn)
@@ -131,18 +139,42 @@ class DiceOptionsPanel(QWidget):
         QShortcut(QKeySequence("R"), self, activated=self.roll)
         QShortcut(QKeySequence("Esc"), self, activated=self.reset)
 
-        self.roll_btn = roll_btn
-        self.reset_btn = reset_btn
+        self.rollBtn = roll_btn
+        self.resetBtn = reset_btn
+        # backward-compatible attribute names
+        self.roll_btn = self.rollBtn
+        self.reset_btn = self.resetBtn
+        self.mod_ctrl = self.modifierControl
+
+        # tighten vertical rhythm
+        root.setSpacing(8)
+        root.setContentsMargins(8, 6, 8, 8)
+
+        dense_h_btn = 38 if compact else 44
+        dense_h_edit = 38 if compact else 44
+
+        for btn in self.findChildren(
+            QPushButton, options=Qt.FindChildOption.FindChildrenRecursively
+        ):
+            if btn.property("class") == "die":
+                btn.setMinimumHeight(dense_h_btn)
+        self.resetBtn.setMinimumHeight(dense_h_btn)
+        self.rollBtn.setMinimumHeight(dense_h_btn + 6)
+
+        # modifier controls
+        self.modifierControl.edit.setMinimumHeight(dense_h_edit)
+        self.modifierControl.minus.setMinimumHeight(dense_h_edit)
+        self.modifierControl.plus.setMinimumHeight(dense_h_edit)
 
     # utilities ----------------------------------------------------------
     def _update_roll_enabled(self, *_: int) -> None:
         total = sum(btn.count for btn in self.die_buttons.values())
-        self.roll_btn.setEnabled(total > 0)
+        self.rollBtn.setEnabled(total > 0)
 
     def reset(self) -> None:
         for btn in self.die_buttons.values():
             btn.count = 0
-        self.mod_ctrl.setValue(0)
+        self.modifierControl.setValue(0)
         self._update_roll_enabled()
         self.resetRequested.emit()
 
@@ -150,11 +182,11 @@ class DiceOptionsPanel(QWidget):
         dice = {sides: btn.count for sides, btn in self.die_buttons.items() if btn.count}
         if not dice:
             return
-        self.rollRequested.emit(dice, self.mod_ctrl.value)
+        self.rollRequested.emit(dice, self.modifierControl.value)
 
     def state(self) -> Tuple[Dict[int, int], int]:
         dice = {sides: btn.count for sides, btn in self.die_buttons.items() if btn.count}
-        return dice, self.mod_ctrl.value
+        return dice, self.modifierControl.value
 
     def get_notation(self) -> str:
         dice, mod = self.state()

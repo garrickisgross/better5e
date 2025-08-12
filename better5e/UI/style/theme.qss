@@ -127,6 +127,13 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     qproperty-flat: true;
 }
 
+QLabel#SectionHeader {
+  font-size: 18px;
+  font-weight: 700;
+  color: $text;
+  margin-bottom: 4px;
+}
+
 /* QGroupBox styling */
 QGroupBox {
     border: 1px solid $border;
@@ -182,7 +189,7 @@ QLabel[class~="chip"] {
 
 /* Dice buttons */
 QPushButton[class~="die"] {
-  min-width: 72px; min-height: 44px;
+  min-width: 72px; min-height: 38px;
   padding: 8px 14px;
   border-radius: 12px;
   background: $surfaceAlt;
@@ -215,5 +222,5 @@ QWidget#ModifierControl QToolButton {
 QWidget#ModifierControl QToolButton:hover { border-color: $accent; }
 
 /* Actions */
-QPushButton#ResetBtn { margin-top: 8px; }
-QPushButton#RollBtn  { margin-top: 6px; }
+QPushButton#ResetBtn { margin-top: 8px; min-height: 38px; }
+QPushButton#RollBtn  { margin-top: 6px; min-height: 44px; }

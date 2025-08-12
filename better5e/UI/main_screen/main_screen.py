@@ -8,6 +8,8 @@ from PyQt6.QtWidgets import (
     QWidget,
     QScrollArea,
     QPushButton,
+    QSizePolicy,
+    QSpacerItem,
 )
 from typing import TYPE_CHECKING
 
@@ -32,58 +34,89 @@ class MainScreen(BasePage):
     createNewCampaign = pyqtSignal()
     openHomebrew = pyqtSignal(str)
 
-    def __init__(self, app: "App"):
+    def __init__(self, app: "App") -> None:
         super().__init__(app, "Home")
+
         body = self.layout()
+        body.setContentsMargins(0, 0, 0, 0)
 
-        columns = QHBoxLayout()
-        body.addLayout(columns)
+        # Root 3-column layout -------------------------------------------------
+        root = QHBoxLayout()
+        root.setContentsMargins(12, 8, 12, 12)
+        root.setSpacing(12)
+        body.addLayout(root)
 
-        # Left sidebar
-        left = QVBoxLayout()
+        # Left sidebar --------------------------------------------------------
+        leftPane = QWidget()
+        leftCol = QVBoxLayout(leftPane)
         self.roll_history = RollHistoryPanel()
-        left.addWidget(self.roll_history)
+        leftCol.addWidget(self.roll_history)
         self.dice_panel = DiceOptionsPanel()
         self.dice_panel.rollRequested.connect(self._on_roll_requested)
-        left.addWidget(self.dice_panel)
-        left.setStretch(0, 1)
-        columns.addLayout(left)
+        leftCol.addWidget(self.dice_panel)
+        leftCol.setStretch(0, 1)
 
-        # Center content
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        columns.addWidget(scroll, 1)
+        leftPane.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        leftPane.setMaximumWidth(400)
 
-        center_widget = QWidget()
-        scroll.setWidget(center_widget)
-        center_layout = QVBoxLayout(center_widget)
+        # Center content ------------------------------------------------------
+        centerPane = QScrollArea()
+        centerPane.setWidgetResizable(True)
+
+        centerWidget = QWidget()
+        centerPane.setWidget(centerWidget)
+        centerCol = QVBoxLayout(centerWidget)
+        centerCol.setContentsMargins(8, 0, 8, 0)
+        centerCol.setSpacing(12)
 
         # Characters section
+        charactersSection = QWidget()
+        charactersLayout = QVBoxLayout(charactersSection)
         self.characters_header = SectionHeader("My Characters")
         self.characters_header.seeAll.connect(self.seeAllCharacters.emit)
-        center_layout.addWidget(self.characters_header)
-        center_layout.addWidget(CardGrid(["Character 1", "Character 2", "Character 3"]))
+        charactersLayout.addWidget(self.characters_header)
+        charactersLayout.addWidget(CardGrid(["Character 1", "Character 2", "Character 3"]))
         self.characters_create = QPushButton("Create New")
         self.characters_create.setProperty("class", "primary")
         self.characters_create.clicked.connect(self.createNewCharacter.emit)
-        center_layout.addWidget(self.characters_create)
+        charactersLayout.addWidget(self.characters_create)
 
         # Campaigns section
+        campaignsSection = QWidget()
+        campaignsLayout = QVBoxLayout(campaignsSection)
         self.campaigns_header = SectionHeader("My Campaigns")
         self.campaigns_header.seeAll.connect(self.seeAllCampaigns.emit)
-        center_layout.addWidget(self.campaigns_header)
-        center_layout.addWidget(CardGrid(["Campaign 1", "Campaign 2", "Campaign 3"]))
+        campaignsLayout.addWidget(self.campaigns_header)
+        campaignsLayout.addWidget(CardGrid(["Campaign 1", "Campaign 2", "Campaign 3"]))
         self.campaigns_create = QPushButton("Create New")
         self.campaigns_create.setProperty("class", "primary")
         self.campaigns_create.clicked.connect(self.createNewCampaign.emit)
-        center_layout.addWidget(self.campaigns_create)
+        campaignsLayout.addWidget(self.campaigns_create)
 
-        center_layout.addStretch()
+        centerCol.addWidget(charactersSection)
+        centerCol.addItem(
+            QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        )
+        centerCol.addWidget(campaignsSection)
 
-        # Right sidebar
-        self.homebrew_panel = HomebrewPanel()
-        self.homebrew_panel.openHomebrew.connect(self.openHomebrew.emit)
-        columns.addWidget(self.homebrew_panel)
+        # Right sidebar -------------------------------------------------------
+        rightPane = HomebrewPanel()
+        rightPane.openHomebrew.connect(self.openHomebrew.emit)
+        rightPane.setMinimumWidth(260)
+        rightPane.setMaximumWidth(320)
+        rightPane.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+
+        # Assemble layout -----------------------------------------------------
+        root.addWidget(leftPane)
+        root.addWidget(centerPane)
+        root.addWidget(rightPane)
+
+        # Keep sidebars compact while center expands
+        root.setStretch(0, 0)
+        root.setStretch(1, 1)
+        root.setStretch(2, 0)
+
+        self.homebrew_panel = rightPane
 
     # roll handling -----------------------------------------------------
     def _on_roll_requested(self, dice: dict[int, int], modifier: int) -> None:
