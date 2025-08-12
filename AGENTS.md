@@ -11,4 +11,5 @@
 - Main screen center uses a borderless scroll area named `CenterScroll` with `LeftPane`, `CenterPane`, and `RightPane` named for styling.
 - Style `CenterScroll` by targeting its `qt_scrollarea_viewport` so child widgets like the "Create New" buttons keep their own borders and backgrounds.
 - DiceOptionsPanel uses a 4×2 grid of dice buttons sized 88×44 with 10 px gutters. Modifier controls are centered with 40×40 ± buttons flanking a ~72 px number field.
+- HomebrewPanel titles should use `SectionHeader` with its 'See All' button hidden for consistent styling.
 
