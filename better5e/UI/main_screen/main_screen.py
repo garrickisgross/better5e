@@ -107,7 +107,7 @@ class MainScreen(BasePage):
         centerCol.addWidget(campaignsSection)
 
         # Right sidebar -------------------------------------------------------
-        rightPane = HomebrewPanel()
+        rightPane = HomebrewPanel(app)
         rightPane.setObjectName("RightPane")
         rightPane.openHomebrew.connect(self.openHomebrew.emit)
         rightPane.setMinimumWidth(260)
