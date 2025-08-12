@@ -61,7 +61,7 @@ class TitleBar(QFrame):
             b.setCursor(Qt.CursorShape.PointingHandCursor)
             b.setProperty("class", "winbtn")
             b.setToolTip(tip)
-            b.setFixedSize(42, 32)
+            b.setFixedSize(52, 40)
             f = b.font()
             f.setPixelSize(16)
             f.setWeight(600)
