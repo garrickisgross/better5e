@@ -61,7 +61,7 @@ class FeatureCreatePage(BasePage):
 
         info = QWidget()
         info_form = QFormLayout(info)
-        for field in ["name", "desc"]:
+        for field in ["name", "desc", "uses_max", "recharge"]:
             info_form.addRow(
                 self.form_builder.label_for(field),
                 self.form_builder.widgets_for(field),
@@ -69,20 +69,9 @@ class FeatureCreatePage(BasePage):
         self.tabs.addTab(info, "Info")
 
         actions_tab = QWidget()
-        actions_form = QFormLayout(actions_tab)
-        actions_form.addRow(
-            self.form_builder.label_for("actions"),
-            self.form_builder.widgets_for("actions"),
-        )
-        actions_form.addRow(
-            self.form_builder.label_for("uses_max"),
-            self.form_builder.widgets_for("uses_max"),
-        )
-        actions_form.addRow(
-            self.form_builder.label_for("recharge"),
-            self.form_builder.widgets_for("recharge"),
-        )
-        self.tabs.addTab(actions_tab, "Actions & Uses")
+        actions_layout = QVBoxLayout(actions_tab)
+        actions_layout.addWidget(self.form_builder.widgets_for("actions"))
+        self.tabs.addTab(actions_tab, "Actions")
 
         mod_tab = QWidget()
         mod_layout = QVBoxLayout(mod_tab)

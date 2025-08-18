@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Callable
 
 from PyQt6.QtWidgets import (
     QLineEdit,
@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QToolButton,
+    QFormLayout,
 )
 
 from pydantic import BaseModel
@@ -33,10 +34,35 @@ LABEL_OVERRIDES = {
 }
 
 
-class ActionRow(QWidget):
-    def __init__(self):
+class ActionCard(QWidget):
+    def __init__(self, data: dict[str, Any], remove: Callable[["ActionCard"], None]):
         super().__init__()
+        self.data = data
         layout = QHBoxLayout(self)
+        info = QVBoxLayout()
+        name = data.get("name") or data["action_type"].replace("_", " ").title()
+        info.addWidget(QLabel(name))
+        if data.get("desc"):
+            info.addWidget(QLabel(data["desc"]))
+        roll = data.get("roll")
+        if roll:
+            info.addWidget(QLabel(f"{roll['num']}d{roll['sides']}"))
+        layout.addLayout(info)
+        btn = QToolButton()
+        btn.setText("✕")
+        btn.clicked.connect(lambda: remove(self))
+        layout.addWidget(btn)
+
+
+class ActionsEditor(QWidget):
+    def __init__(self, labels: dict[str, str]):
+        super().__init__()
+        self._labels = labels
+        self._data: list[dict[str, Any]] = []
+        layout = QVBoxLayout(self)
+        self.cards = QVBoxLayout()
+        layout.addLayout(self.cards)
+        form = QFormLayout()
         self.type = QComboBox()
         self.type.addItem("", "")
         for val in ActionType:
@@ -47,51 +73,51 @@ class ActionRow(QWidget):
         self.sides = QSpinBox()
         self.sides.setMinimum(1)
         self.sides.setMaximum(1_000)
-        remove = QToolButton()
-        remove.setText("✕")
-        remove.clicked.connect(self._remove)
-        layout.addWidget(self.type)
-        layout.addWidget(self.num)
-        layout.addWidget(self.sides)
-        layout.addWidget(remove)
+        self.name = QLineEdit()
+        self.desc = QLineEdit()
+        form.addRow(labels["type"], self.type)
+        form.addRow(labels["num"], self.num)
+        form.addRow(labels["sides"], self.sides)
+        form.addRow(labels["name"], self.name)
+        form.addRow(labels["desc"], self.desc)
+        layout.addLayout(form)
+        add = QPushButton("Add Action")
+        add.clicked.connect(self._add_action)
+        layout.addWidget(add)
 
-    def _remove(self) -> None:
-        self.setParent(None)
-        self.deleteLater()
+    def _clear_form(self) -> None:
+        self.type.setCurrentIndex(0)
+        self.num.setValue(1)
+        self.sides.setValue(20)
+        self.name.clear()
+        self.desc.clear()
 
-    def payload(self) -> dict[str, Any] | None:
+    def _add_action(self) -> None:
         action_type = self.type.currentData()
         if not action_type:
-            return None
-        roll = {"num": self.num.value(), "sides": self.sides.value()}
-        return {"action_type": action_type, "roll": roll}
+            return
+        data: dict[str, Any] = {
+            "action_type": action_type,
+            "roll": {"num": self.num.value(), "sides": self.sides.value()},
+        }
+        if self.name.text():
+            data["name"] = self.name.text()
+        if self.desc.text():
+            data["desc"] = self.desc.text()
+        card = ActionCard(data, self._remove_card)
+        self.cards.addWidget(card)
+        self._data.append(data)
+        self._clear_form()
 
-
-class ActionsEditor(QWidget):
-    def __init__(self):
-        super().__init__()
-        layout = QVBoxLayout(self)
-        self.rows = QVBoxLayout()
-        layout.addLayout(self.rows)
-        add = QPushButton("Add Action")
-        add.clicked.connect(self._add_row)
-        layout.addWidget(add)
-        self._add_row()
-
-    def _add_row(self) -> None:
-        row = ActionRow()
-        self.rows.addWidget(row)
+    def _remove_card(self, card: ActionCard) -> None:
+        idx = self.cards.indexOf(card)
+        if idx != -1:
+            self._data.pop(idx)
+        card.setParent(None)
+        card.deleteLater()
 
     def actions(self) -> list[dict[str, Any]]:
-        actions: list[dict[str, Any]] = []
-        for i in range(self.rows.count()):
-            row = self.rows.itemAt(i).widget()
-            if row is None:
-                continue
-            payload = row.payload()
-            if payload:
-                actions.append(payload)
-        return actions
+        return list(self._data)
 
 
 class ValidationErrorUI(Exception):
@@ -112,6 +138,7 @@ class SchemaFormBuilder:
         self.required = set(self.schema.get("required", []))
         self.widgets: dict[str, QWidget] = {}
         self.labels: dict[str, str] = {}
+        self.action_labels: dict[str, str] | None = None
         self._build()
 
     # building --------------------------------------------------------
@@ -159,14 +186,24 @@ class SchemaFormBuilder:
         if t == "array" and info.get("items", {}).get("format") == "uuid":
             return DropZone()
         if name == "actions":
-            return ActionsEditor()
+            labels = {
+                "type": "Type",
+                "num": "Number of Dice",
+                "sides": "Die Sides",
+                "name": "Name",
+                "desc": "Description",
+            }
+            self.action_labels = labels
+            return ActionsEditor(labels)
         return QLabel("(Coming soon)")
 
     # API -------------------------------------------------------------
     def widgets_for(self, field: str) -> QWidget:
         return self.widgets[field]
 
-    def label_for(self, field: str) -> str:
+    def label_for(self, field: str) -> Any:
+        if field == "actions" and self.action_labels is not None:
+            return self.action_labels
         return self.labels[field]
 
     def set_errors(self, errors: dict[str, str]) -> None:
