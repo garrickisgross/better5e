@@ -2,8 +2,8 @@
 
 ## About the App
 - Better 5e provides a small set of Pydantic models, a SQLite-backed data access
-  layer, and a wizard engine for building tooling around the 5th Edition of the
-  world's greatest roleplaying game.
+  layer, and a PyQT6 frontend for homebrewing characters, and campaigns for the 5th 
+  Edition of the world's greatest roleplaying game.
 
 ## Architecture
 - Use absolute imports without leading dots.
