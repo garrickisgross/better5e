@@ -106,7 +106,7 @@ class MainScreen(BasePage):
         # Right sidebar -------------------------------------------------------
         rightPane = HomebrewPanel(app)
         rightPane.setObjectName("RightPane")
-        rightPane.openHomebrew.connect(self.openHomebrew.emit)
+        rightPane.openHomebrew.connect(self._open_homebrew)
         rightPane.setMinimumWidth(260)
         rightPane.setMaximumWidth(320)
         rightPane.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
@@ -122,6 +122,13 @@ class MainScreen(BasePage):
         root.setStretch(2, 0)
 
         self.homebrew_panel = rightPane
+
+    def _open_homebrew(self, kind: str) -> None:
+        if kind == "feature":
+            from better5e.UI.pages.feature_form_page import FeatureFormPage
+            self.app.push(FeatureFormPage(self.app))
+        else:  # pragma: no cover
+            self.openHomebrew.emit(kind)
 
     # roll handling -----------------------------------------------------
     def _on_roll_requested(self, dice: dict[int, int], modifier: int) -> None:

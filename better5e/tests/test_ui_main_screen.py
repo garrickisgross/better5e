@@ -129,20 +129,19 @@ def test_section_header_and_card_grid(qapp):
     assert grid.layout().count() == 3
 
 
-def test_homebrew_panel_buttons_are_inert(qapp):
-    pushed: list[object] = []
-    app = types.SimpleNamespace(push=lambda w: pushed.append(w))
+def test_homebrew_panel_feature_button(qapp):
+    app = types.SimpleNamespace(push=lambda w: None)
     panel = HomebrewPanel(app)
     received: list[str] = []
     panel.openHomebrew.connect(received.append)
 
     btn_feat = panel.layout().itemAt(1).widget()
     btn_feat.click()
-    assert not pushed
+    assert received == ["feature"]
 
     btn_class = panel.layout().itemAt(2).widget()
     btn_class.click()
-    assert received == []
+    assert received == ["feature"]
 
 
 def test_main_screen_scroll_area_styling(qapp):

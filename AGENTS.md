@@ -15,7 +15,7 @@
   styling lives in the theme.
 - `DAO.load_by_kind` skips invalid records so legacy entries without required
   fields do not crash the UI.
-- `HomebrewPanel` displays placeholder buttons that are not wired to actions.
+- `HomebrewPanel` wires the "Create Feature" button to open `FeatureFormPage`; other buttons remain placeholders.
 - Homebrew creation pages use `SchemaFormBuilder` and `DropZone` for form
   generation and relations. Reuse these helpers for additional models.
 - `SchemaFormBuilder.label_for()` exposes user-facing field labels; avoid using
@@ -28,7 +28,8 @@
 - Action cards appear above the add-action form and include a remove button for
   managing entries.
 - Feature descriptions are required; submissions should be blocked when the
-  description is empty.
+  description is empty. Feature creation forms must disable Submit until name and
+  description are set and, when uses are limited, a recharge type is selected.
 
 ## Style
 - Page gutters are unified via `UI.core.style.tokens.gutter()` and used by the title

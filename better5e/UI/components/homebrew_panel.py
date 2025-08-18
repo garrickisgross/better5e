@@ -32,9 +32,10 @@ class HomebrewPanel(QWidget):
         ]
 
         for kind in kinds:
-            btn = QPushButton(f"Create {kind.title()}")
-            # Buttons are placeholders and do not trigger actions
+            btn = QPushButton(f"Create {kind.title()}" )
             add_shadow(btn)
             layout.addWidget(btn)
+            if kind == "feature":
+                btn.clicked.connect(lambda _=False, k=kind: self.openHomebrew.emit(k))
 
         layout.addStretch(1)
