@@ -9,6 +9,8 @@
 - Use absolute imports without leading dots.
 - Backend code changes must be explicitly called out in pull request
   descriptions.
+- The `better5e/UI` package contains `components`, `pages`, and `core`
+  directories only; place shared styling under `core/style`.
 - Main screen sections use the `Section` widget; dividers are removed and
   styling lives in the theme.
 - `DAO.load_by_kind` skips invalid records so legacy entries without required
@@ -29,11 +31,11 @@
   description is empty.
 
 ## Style
-- Page gutters are unified via `UI.style.tokens.gutter()` and used by the title
+- Page gutters are unified via `UI.core.style.tokens.gutter()` and used by the title
   bar and main screen layout.
 - Maintain alignment between main screen sections; avoid spacer items that push
   sections apart and rely on stretches while keeping gutters consistent.
-- The title bar's left margin is defined by `GUTTER` in `UI/shell/chrome.py`; keep
+- The title bar's left margin is defined by `GUTTER` in `UI/components/chrome.py`; keep
   this value in sync with `MainScreen` layout margins so the app title aligns with
   the dice panel.
 - The app title uses a 12px text indent, a 2px top margin, and a bold 24px font

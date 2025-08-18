@@ -11,14 +11,14 @@ from datetime import datetime
 from PyQt6.QtWidgets import QApplication, QMenu, QScrollArea, QFrame, QWidget
 import pytest
 
-from better5e.UI.main_screen.components.roll_history import RollHistoryPanel
-from better5e.UI.main_screen.components.dice_options import DiceOptionsPanel
-from better5e.UI.main_screen.components.section_header import SectionHeader
-from better5e.UI.main_screen.components.card_grid import CardGrid
-from better5e.UI.main_screen.components import homebrew_panel
-from better5e.UI.main_screen.components.homebrew_panel import HomebrewPanel
-from better5e.UI.main_screen.main_screen import MainScreen
-from better5e.UI.style.tokens import gutter
+from better5e.UI.components.roll_history import RollHistoryPanel
+from better5e.UI.components.dice_options import DiceOptionsPanel
+from better5e.UI.components.section_header import SectionHeader
+from better5e.UI.components.card_grid import CardGrid
+from better5e.UI.components import homebrew_panel
+from better5e.UI.components.homebrew_panel import HomebrewPanel
+from better5e.UI.pages.main_screen import MainScreen
+from better5e.UI.core.style.tokens import gutter
 
 
 @pytest.fixture(scope="session")
@@ -201,7 +201,7 @@ def test_main_screen_signal_propagation(qapp, monkeypatch):
 
 
 def test_fmt_time_variants():
-    from better5e.UI.main_screen.components.roll_history import _fmt_time
+    from better5e.UI.components.roll_history import _fmt_time
 
     now = datetime.now()
     assert ":" in _fmt_time(now)

@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
     QAbstractItemView,
 )
 
-from better5e.UI.style.theme import add_shadow
+from better5e.UI.core.style.theme import add_shadow
 
 
 def _fmt_time(ts: datetime) -> str:

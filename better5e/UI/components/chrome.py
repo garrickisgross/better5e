@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import (
     QFrame,
     QSizePolicy,
 )
-from better5e.UI.style.tokens import gutter
+from better5e.UI.core.style.tokens import gutter
 
 
 # Keep the title bar aligned with main screen gutters.  This value should
