@@ -129,21 +129,20 @@ def test_section_header_and_card_grid(qapp):
     assert grid.layout().count() == 3
 
 
-def test_homebrew_panel_signals(qapp, monkeypatch):
+def test_homebrew_panel_buttons_are_inert(qapp):
     pushed: list[object] = []
     app = types.SimpleNamespace(push=lambda w: pushed.append(w))
-    monkeypatch.setattr(homebrew_panel, "FeatureCreatePage", lambda app: QWidget())
     panel = HomebrewPanel(app)
     received: list[str] = []
     panel.openHomebrew.connect(received.append)
 
     btn_feat = panel.layout().itemAt(1).widget()
     btn_feat.click()
-    assert pushed and isinstance(pushed[0], QWidget)
+    assert not pushed
 
     btn_class = panel.layout().itemAt(2).widget()
     btn_class.click()
-    assert received == ["class"]
+    assert received == []
 
 
 def test_main_screen_scroll_area_styling(qapp):
@@ -178,7 +177,7 @@ def test_main_screen_signal_propagation(qapp, monkeypatch):
     hb_btn = screen.homebrew_panel.layout().itemAt(2).widget()
     hb_btn.click()
 
-    assert signals == ["see_chars", "new_char", "see_camps", "new_camp", "class"]
+    assert signals == ["see_chars", "new_char", "see_camps", "new_camp"]
 
     # roll wiring
     seq = iter([4, 3])
