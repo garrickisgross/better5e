@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QLineEdit,
     QPlainTextEdit,
@@ -10,6 +11,7 @@ from PyQt6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QWidget,
+    QFrame,
     QLabel,
     QPushButton,
     QVBoxLayout,
@@ -21,6 +23,7 @@ from PyQt6.QtWidgets import (
 from pydantic import BaseModel
 
 from better5e.UI.homebrew.dnd import DropZone
+from better5e.UI.style.theme import add_shadow
 from better5e.models.enums import ActionType
 
 
@@ -34,24 +37,44 @@ LABEL_OVERRIDES = {
 }
 
 
-class ActionCard(QWidget):
+class ActionCard(QFrame):
     def __init__(self, data: dict[str, Any], remove: Callable[["ActionCard"], None]):
         super().__init__()
+        self.setObjectName("Card")
+        add_shadow(self)
         self.data = data
+
         layout = QHBoxLayout(self)
         info = QVBoxLayout()
-        name = data.get("name") or data["action_type"].replace("_", " ").title()
-        info.addWidget(QLabel(name))
+
+        title_txt = data.get("name") or data["action_type"].replace("_", " ").title()
+        title = QLabel(title_txt)
+        title.setObjectName("CardTitle")
+        info.addWidget(title)
+
+        subtitle = QLabel(data["action_type"].replace("_", " ").title())
+        subtitle.setObjectName("CardSubtitle")
+        info.addWidget(subtitle)
+
         if data.get("desc"):
-            info.addWidget(QLabel(data["desc"]))
+            body = QLabel(data["desc"])
+            body.setObjectName("CardBody")
+            body.setWordWrap(True)
+            info.addWidget(body)
+
+        layout.addLayout(info)
+        layout.addStretch(1)
+
         roll = data.get("roll")
         if roll:
-            info.addWidget(QLabel(f"{roll['num']}d{roll['sides']}"))
-        layout.addLayout(info)
+            roll_lbl = QLabel(f"{roll['num']}d{roll['sides']}")
+            roll_lbl.setObjectName("CardRoll")
+            layout.addWidget(roll_lbl, alignment=Qt.AlignmentFlag.AlignRight)
+
         btn = QToolButton()
         btn.setText("✕")
         btn.clicked.connect(lambda: remove(self))
-        layout.addWidget(btn)
+        layout.addWidget(btn, alignment=Qt.AlignmentFlag.AlignTop)
 
 
 class ActionsEditor(QWidget):

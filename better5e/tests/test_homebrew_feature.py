@@ -1,7 +1,7 @@
 import types
 from uuid import UUID
 
-from PyQt6.QtWidgets import QApplication, QToolButton
+from PyQt6.QtWidgets import QApplication, QToolButton, QLabel
 from PyQt6.QtCore import QMimeData, Qt
 import pytest
 import os
@@ -44,6 +44,8 @@ def test_schema_form_builder_validation(qapp):
     actions._add_action()
     assert actions.cards.count() == 1
     card = actions.cards.itemAt(0).widget()
+    texts = {w.text() for w in card.findChildren(QLabel)}
+    assert {"Swing", "Action", "Hard", "1d6"} <= texts
     card.findChild(QToolButton).click()
     assert actions.cards.count() == 0
     actions.type.setCurrentIndex(1)
@@ -124,11 +126,17 @@ def test_feature_create_submit(qapp, monkeypatch):
     act_editor.desc.setText("Hard")
     act_editor._add_action()
     assert act_editor.cards.count() == 1
+    card = act_editor.cards.itemAt(0).widget()
+    texts = {w.text() for w in card.findChildren(QLabel)}
+    assert {"Hit", "Action", "Hard", "1d6"} <= texts
     act_editor.type.setCurrentIndex(1)
     act_editor.name.setText("Kick")
     act_editor.desc.setText("Soft")
     act_editor._add_action()
     assert act_editor.cards.count() == 2
+    card2 = act_editor.cards.itemAt(1).widget()
+    texts2 = {w.text() for w in card2.findChildren(QLabel)}
+    assert {"Kick", "Action", "Soft", "1d20"} <= texts2
     rec = Record(uuid=UUID(int=2), kind="class", name="C1")
     page.grants.add_record(rec)
     saved = {}

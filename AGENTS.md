@@ -19,6 +19,7 @@
 - Use `ActionsEditor` for editing lists of Actions; it presents card widgets with optional `name`/`desc` fields and roll details.
 - When forms grow, organize fields into a `QTabWidget` with sections like "Info", "Actions", "Modifier", and "Grants"; "Uses" inputs belong in the Info tab.
 - Action cards appear above the add-action form and include a remove button for managing entries.
+- Action cards are styled as `Card` frames with a title (name), a subtitle for the action type, an optional body for the description, and the dice notation aligned to the right.
 - Feature descriptions are required; submissions should be blocked when the description is empty.
 - `DAO.load_by_kind` skips invalid records so legacy entries without required fields do not crash the UI.
 - Title bar action buttons (`WinBtnMin`, `WinBtnMax`, `WinBtnClose`) use a fixed size of 52×40 with ~2 px bottom padding to center the glyphs. Keep these dimensions in sync with `TitleBar.HEIGHT` so the buttons align with the app title.
