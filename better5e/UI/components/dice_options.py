@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
 )
 
-from better5e.UI.main_screen.components.die_button import DieButton
+from better5e.UI.components.die_button import DieButton
 
 
 DICE_SIDES = [2, 4, 6, 8, 10, 12, 20, 100]

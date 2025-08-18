@@ -3,7 +3,7 @@ import sys
 from PyQt6.QtWidgets import QApplication
 
 from better5e.UI.core.app import App
-from better5e.UI.main_screen.main_screen import MainScreen
+from better5e.UI.pages.main_screen import MainScreen
 from better5e.UI.style import tokens
 from better5e.UI.style.theme import apply_style
 

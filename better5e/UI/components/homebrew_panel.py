@@ -1,7 +1,7 @@
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton
 
-from better5e.UI.main_screen.components.section_header import SectionHeader
+from better5e.UI.components.section_header import SectionHeader
 from better5e.UI.style.theme import add_shadow
 
 
