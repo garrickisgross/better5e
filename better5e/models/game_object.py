@@ -17,6 +17,8 @@ class Rollable(BaseModel):
 class Action(BaseModel):
     action_type: ActionType
     roll: Rollable | None = None
+    name: str | None = None
+    desc: str | None = None
 
 class Base(BaseModel):
     model_config = ConfigDict(extra='forbid')
@@ -30,6 +32,7 @@ class Base(BaseModel):
 
 class Feature(Base):
     kind: Literal["feature"] = "feature"
+    desc: str
     uses_max: int | None = None
     recharge: RechargeType | None = None
 
