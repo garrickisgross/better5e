@@ -30,6 +30,7 @@ class Base(BaseModel):
 
 class Feature(Base):
     kind: Literal["feature"] = "feature"
+    desc: str
     uses_max: int | None = None
     recharge: RechargeType | None = None
 

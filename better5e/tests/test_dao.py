@@ -3,6 +3,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from uuid import uuid4
+import json
 
 import better5e.models.game_object as go
 from better5e.models.enums import RechargeType, Op, ActionType
@@ -58,3 +59,27 @@ def test_dao_update_and_singleton(tmp_path):
 
     # loading by a kind with no entries returns an empty list
     assert dao1.load_by_kind("spell") == []
+
+
+def test_load_by_kind_skips_invalid(tmp_path):
+    sqlite_dao.SingletonMeta._instances = {}
+    sqlite_dao.DAO.db_name = tmp_path / "test.db"
+    dao = sqlite_dao.DAO()
+
+    # insert invalid feature with missing desc
+    bad = {
+        "id": str(uuid4()),
+        "kind": "feature",
+        "name": "Bad",
+        "desc": None,
+    }
+    dao.conn.execute(
+        "INSERT INTO game_objects (id, kind, data) VALUES (?,?,?)",
+        (bad["id"], bad["kind"], json.dumps(bad)),
+    )
+
+    good = go.Feature(name="Good", desc="ok")
+    dao.save(good)
+
+    features = dao.load_by_kind("feature")
+    assert features == [good]

@@ -22,8 +22,8 @@ def test_feature_serialization_round_trip():
 
 
 def test_default_lists_are_independent():
-    f1 = go.Feature(name="F1")
-    f2 = go.Feature(name="F2")
+    f1 = go.Feature(name="F1", desc="d1")
+    f2 = go.Feature(name="F2", desc="d2")
     f1.actions.append(go.Action(action_type=ActionType.ACTION))
     assert f2.actions == []
 

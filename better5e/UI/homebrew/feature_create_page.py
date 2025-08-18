@@ -7,8 +7,6 @@ from PyQt6.QtWidgets import (
     QLabel,
     QToolButton,
     QSplitter,
-    QScrollArea,
-    QFrame,
     QFormLayout,
     QTabWidget,
     QPushButton,
@@ -45,32 +43,59 @@ class FeatureCreatePage(BasePage):
         splitter = QSplitter()
         root.addWidget(splitter, 1)
 
-        # left form
         self.form_builder = SchemaFormBuilder(Feature)
-        form_container = QWidget()
-        form_layout = QFormLayout(form_container)
-        for name, w in self.form_builder.widgets.items():
-            form_layout.addRow(self.form_builder.label_for(name), w)
-            if name == "grants":
-                self.grants = w  # type: ignore[assignment]
-                w.accept_kinds = [
-                    "feature",
-                    "class",
-                    "subclass",
-                    "item",
-                    "spellcasting",
-                    "spell",
-                    "race",
-                    "background",
-                ]
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.Shape.NoFrame)
-        scroll.setWidget(form_container)
-        splitter.addWidget(scroll)
+        self.grants = self.form_builder.widgets_for("grants")  # type: ignore[assignment]
+        self.grants.accept_kinds = [
+            "feature",
+            "class",
+            "subclass",
+            "item",
+            "spellcasting",
+            "spell",
+            "race",
+            "background",
+        ]
 
-        # right catalog
-        tabs = QTabWidget()
+        self.tabs = QTabWidget()
+        splitter.addWidget(self.tabs)
+
+        info = QWidget()
+        info_form = QFormLayout(info)
+        for field in ["name", "desc"]:
+            info_form.addRow(
+                self.form_builder.label_for(field),
+                self.form_builder.widgets_for(field),
+            )
+        self.tabs.addTab(info, "Info")
+
+        actions_tab = QWidget()
+        actions_form = QFormLayout(actions_tab)
+        actions_form.addRow(
+            self.form_builder.label_for("actions"),
+            self.form_builder.widgets_for("actions"),
+        )
+        actions_form.addRow(
+            self.form_builder.label_for("uses_max"),
+            self.form_builder.widgets_for("uses_max"),
+        )
+        actions_form.addRow(
+            self.form_builder.label_for("recharge"),
+            self.form_builder.widgets_for("recharge"),
+        )
+        self.tabs.addTab(actions_tab, "Actions & Uses")
+
+        mod_tab = QWidget()
+        mod_layout = QVBoxLayout(mod_tab)
+        mod_layout.addWidget(QLabel("Coming soon"))
+        self.tabs.addTab(mod_tab, "Modifier")
+
+        grants_tab = QWidget()
+        grants_layout = QVBoxLayout(grants_tab)
+        grants_layout.addWidget(self.grants)
+        self.tabs.addTab(grants_tab, "Grants")
+        self._grants_index = self.tabs.indexOf(grants_tab)
+
+        self.catalog_tabs = QTabWidget()
         kinds = [
             "feature",
             "class",
@@ -86,8 +111,12 @@ class FeatureCreatePage(BasePage):
             for obj in DAO().load_by_kind(kind):
                 rec = Record(uuid=obj.id, kind=obj.kind, name=obj.name)
                 list_widget.add_record(rec)
-            tabs.addTab(list_widget, kind.title())
-        splitter.addWidget(tabs)
+            self.catalog_tabs.addTab(list_widget, kind.title())
+        splitter.addWidget(self.catalog_tabs)
+        self.catalog_tabs.hide()
+
+        self.tabs.currentChanged.connect(self._on_tab_change)
+        self._on_tab_change(self.tabs.currentIndex())
 
         # footer
         footer = QHBoxLayout()
@@ -115,3 +144,6 @@ class FeatureCreatePage(BasePage):
             self.error_label.setText("invalid")
         except Exception as ex:  # pragma: no cover - unexpected
             self.error_label.setText(str(ex))
+
+    def _on_tab_change(self, idx: int) -> None:
+        self.catalog_tabs.setVisible(idx == self._grants_index)
