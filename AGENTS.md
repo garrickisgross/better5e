@@ -13,8 +13,7 @@
   styling lives in the theme.
 - `DAO.load_by_kind` skips invalid records so legacy entries without required
   fields do not crash the UI.
-- `HomebrewPanel` requires the `App` instance so buttons can push creation pages
-  directly.
+- `HomebrewPanel` displays placeholder buttons that are not wired to actions.
 - Homebrew creation pages use `SchemaFormBuilder` and `DropZone` for form
   generation and relations. Reuse these helpers for additional models.
 - `SchemaFormBuilder.label_for()` exposes user-facing field labels; avoid using
