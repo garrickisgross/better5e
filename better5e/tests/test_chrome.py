@@ -9,8 +9,8 @@ from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtWidgets import QApplication, QWidget
 import pytest
 
-from better5e.UI.shell.chrome import FramelessMainWindow
-from better5e.UI.style.tokens import gutter
+from better5e.UI.components.chrome import FramelessMainWindow
+from better5e.UI.core.style.tokens import gutter
 
 
 @pytest.fixture(scope="session")

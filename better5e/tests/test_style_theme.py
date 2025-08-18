@@ -7,8 +7,8 @@ import os
 from PyQt6.QtWidgets import QApplication, QWidget
 import pytest
 
-from better5e.UI.style import tokens
-from better5e.UI.style import theme
+from better5e.UI.core.style import tokens
+from better5e.UI.core.style import theme
 
 
 @pytest.fixture(scope="session")

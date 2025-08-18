@@ -2,7 +2,7 @@ from typing import Callable, Union
 
 from PyQt6.QtWidgets import QApplication, QStackedWidget, QWidget
 
-from better5e.UI.shell.chrome import FramelessMainWindow
+from better5e.UI.components.chrome import FramelessMainWindow
 
 WidgetFactory = Callable[["App"], QWidget]
 

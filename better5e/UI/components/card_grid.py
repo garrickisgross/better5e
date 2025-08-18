@@ -1,7 +1,7 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget, QGridLayout, QFrame, QLabel, QVBoxLayout
 
-from better5e.UI.style.theme import add_shadow
+from better5e.UI.core.style.theme import add_shadow
 
 
 class CardGrid(QWidget):

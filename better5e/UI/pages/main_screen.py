@@ -14,13 +14,13 @@ from PyQt6.QtWidgets import (
 from typing import TYPE_CHECKING
 
 from better5e.UI.core.basepage import BasePage
-from better5e.UI.main_screen.components.roll_history import RollHistoryPanel, RollCard
-from better5e.UI.main_screen.components.dice_options import DiceOptionsPanel
-from better5e.UI.main_screen.components.section_header import Section
-from better5e.UI.main_screen.components.card_grid import CardGrid
-from better5e.UI.main_screen.components.homebrew_panel import HomebrewPanel
-from better5e.UI.style.theme import add_shadow
-from better5e.UI.style.tokens import gutter
+from better5e.UI.components.roll_history import RollHistoryPanel, RollCard
+from better5e.UI.components.dice_options import DiceOptionsPanel
+from better5e.UI.components.section_header import Section
+from better5e.UI.components.card_grid import CardGrid
+from better5e.UI.components.homebrew_panel import HomebrewPanel
+from better5e.UI.core.style.theme import add_shadow
+from better5e.UI.core.style.tokens import gutter
 
 if TYPE_CHECKING:  # pragma: no cover - imported only for type checking
     from better5e.UI.core.app import App
