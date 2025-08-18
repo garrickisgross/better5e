@@ -219,6 +219,7 @@ Better5e is intended to be a **production-grade desktop application**. Code shou
 - `DAO.load_by_kind` **skips invalid records** so legacy entries without required fields do not crash the UI.
 - `HomebrewPanel` may display **placeholder** buttons not wired to actions.
 - Homebrew creation pages use **`SchemaFormBuilder`** and **`DropZone`** for form generation and relations; **reuse these helpers** for additional models.
+- The **HomebrewPanel** buttons push a reusable `CreatePage(kind)` that builds forms from model schemas.
 - `SchemaFormBuilder.label_for()` exposes user-facing field labels; **avoid raw attribute names** in UI forms.
 - Use **`ActionsEditor`** for editing lists of Actions; it presents card widgets with optional `name`/`desc` and roll details.
 - When forms grow, organize fields into a **`QTabWidget`** with sections like **Info**, **Actions**, **Modifier**, and **Grants**; **“Uses”** inputs belong in the **Info** tab.

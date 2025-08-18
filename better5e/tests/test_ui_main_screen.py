@@ -15,9 +15,8 @@ from better5e.UI.main_screen.components.roll_history import RollHistoryPanel
 from better5e.UI.main_screen.components.dice_options import DiceOptionsPanel
 from better5e.UI.main_screen.components.section_header import SectionHeader
 from better5e.UI.main_screen.components.card_grid import CardGrid
-from better5e.UI.main_screen.components import homebrew_panel
-from better5e.UI.main_screen.components.homebrew_panel import HomebrewPanel
 from better5e.UI.main_screen.main_screen import MainScreen
+from better5e.UI.main_screen.create_pages.CreatePage import CreatePage
 from better5e.UI.style.tokens import gutter
 
 
@@ -129,24 +128,8 @@ def test_section_header_and_card_grid(qapp):
     assert grid.layout().count() == 3
 
 
-def test_homebrew_panel_buttons_are_inert(qapp):
-    pushed: list[object] = []
-    app = types.SimpleNamespace(push=lambda w: pushed.append(w))
-    panel = HomebrewPanel(app)
-    received: list[str] = []
-    panel.openHomebrew.connect(received.append)
-
-    btn_feat = panel.layout().itemAt(1).widget()
-    btn_feat.click()
-    assert not pushed
-
-    btn_class = panel.layout().itemAt(2).widget()
-    btn_class.click()
-    assert received == []
-
-
 def test_main_screen_scroll_area_styling(qapp):
-    app = types.SimpleNamespace(push=lambda w: None)
+    app = types.SimpleNamespace(push=lambda w: None, pop=lambda: None)
     screen = MainScreen(app)
     scroll = screen.findChild(QScrollArea, "CenterScroll")
     assert scroll is not None
@@ -160,7 +143,7 @@ def test_main_screen_scroll_area_styling(qapp):
 
 
 def test_main_screen_signal_propagation(qapp, monkeypatch):
-    app = types.SimpleNamespace(push=lambda w: None)
+    app = types.SimpleNamespace(push=lambda w: None, pop=lambda: None)
     screen = MainScreen(app)
 
     signals = []
@@ -168,16 +151,18 @@ def test_main_screen_signal_propagation(qapp, monkeypatch):
     screen.createNewCharacter.connect(lambda: signals.append("new_char"))
     screen.seeAllCampaigns.connect(lambda: signals.append("see_camps"))
     screen.createNewCampaign.connect(lambda: signals.append("new_camp"))
-    screen.openHomebrew.connect(lambda kind: signals.append(kind))
 
     screen.characters_header.button.click()
     screen.characters_create.click()
     screen.campaigns_header.button.click()
     screen.campaigns_create.click()
-    hb_btn = screen.homebrew_panel.layout().itemAt(2).widget()
+    pushed: list[object] = []
+    screen.app.push = lambda w: pushed.append(w)
+    hb_btn = screen.homebrew_panel.layout().itemAt(1).widget()
     hb_btn.click()
 
     assert signals == ["see_chars", "new_char", "see_camps", "new_camp"]
+    assert len(pushed) == 1 and isinstance(pushed[0], CreatePage)
 
     # roll wiring
     seq = iter([4, 3])
