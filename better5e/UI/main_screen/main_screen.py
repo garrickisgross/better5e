@@ -10,7 +10,6 @@ from PyQt6.QtWidgets import (
     QFrame,
     QPushButton,
     QSizePolicy,
-    QSpacerItem,
 )
 from typing import TYPE_CHECKING
 
@@ -101,10 +100,8 @@ class MainScreen(BasePage):
         campaignsSection.body.addWidget(self.campaigns_create)
 
         centerCol.addWidget(charactersSection)
-        centerCol.addItem(
-            QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-        )
         centerCol.addWidget(campaignsSection)
+        centerCol.addStretch(1)
 
         # Right sidebar -------------------------------------------------------
         rightPane = HomebrewPanel(app)
