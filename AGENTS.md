@@ -1,8 +1,18 @@
 # AGENTS
 
 ## Overview
-- Outline the purpose and scope of this repository.
-- Highlight key goals and ongoing initiatives.
+- Better5e provides a small set of **Pydantic** models, a **SQLite**-backed data access layer, and a **PyQt6** 
+  frontend for homebrewing characters and campaigns for the 5th Edition of the world’s greatest role-playing game.
+
+- A **data-driven** 5e toolkit: users define custom **Features**, **Items**, **Spells**, **Classes/Subclasses**, **Modifiers**, and **Rollables** that flow through a rules engine.
+- A **desktop UI** in PyQt6 for browsing, creating, and editing homebrew content.
+- A **simple DAO** over SQLite for persistence.
+
+**Key goals:** correctness of rules interactions, predictable persistence, crisp UI patterns, and maintainable code.
+
+## Production expectations
+
+Better5e is intended to be a **production-grade desktop application**. Code should be written with maintainability, testability, and stability in mind. UI components must feel polished and consistent with professional-grade software. Avoid quick hacks—prefer patterns that scale, with attention to accessibility, responsiveness, and cross-platform behavior.
 
 ## Architecture
 - Core application code lives under `better5e/` with tests in `better5e/tests/`.
