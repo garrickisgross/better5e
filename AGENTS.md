@@ -17,6 +17,8 @@
 - `HomebrewPanel` requires the `App` instance so buttons can push creation pages directly.
 - `SchemaFormBuilder.label_for()` exposes user-facing field labels; avoid using raw attribute names in UI forms.
 - Use `ActionsEditor` for editing lists of Actions (action type and roll) when building new homebrew pages.
+- When forms grow, organize fields into a `QTabWidget` with sections like "Info", "Actions & Uses", "Modifier", and "Grants".
+- Feature descriptions are required; submissions should be blocked when the description is empty.
 - Title bar action buttons (`WinBtnMin`, `WinBtnMax`, `WinBtnClose`) use a fixed size of 52×40 with ~2 px bottom padding to center the glyphs. Keep these dimensions in sync with `TitleBar.HEIGHT` so the buttons align with the app title.
 
 
