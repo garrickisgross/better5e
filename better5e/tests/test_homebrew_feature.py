@@ -2,7 +2,7 @@ import types
 from uuid import UUID
 
 from PyQt6.QtWidgets import QApplication, QToolButton, QSpacerItem, QSizePolicy
-from PyQt6.QtCore import QMimeData
+from PyQt6.QtCore import QMimeData, Qt
 import pytest
 import os
 
@@ -29,6 +29,7 @@ def test_schema_form_builder_validation(qapp):
     with pytest.raises(ValidationErrorUI):
         form.get_payload()
     form.widgets_for("name").setText("Feat")
+    form.widgets_for("desc").setPlainText("desc")
     form.widgets_for("uses_max").setValue(3)
     form.widgets_for("recharge").setCurrentIndex(1)
     actions = form.widgets_for("actions")
@@ -99,6 +100,7 @@ def test_feature_create_submit(qapp, monkeypatch):
     app = DummyApp()
     page = FeatureCreatePage(app)
     page.form_builder.widgets_for("name").setText("Feat")
+    page.form_builder.widgets_for("desc").setPlainText("desc")
     page.form_builder.widgets_for("uses_max").setValue(2)
     page.form_builder.widgets_for("recharge").setCurrentIndex(1)
     act_editor = page.form_builder.widgets_for("actions")
@@ -123,5 +125,33 @@ def test_feature_create_submit(qapp, monkeypatch):
 def test_feature_create_submit_validation(qapp):
     app = types.SimpleNamespace(pop=lambda: None, push=lambda w: None)
     page = FeatureCreatePage(app)
+    page.form_builder.widgets_for("name").setText("Feat")
     page.on_submit()
     assert page.error_label.text() == "invalid"
+
+
+def test_feature_create_tab_layout_and_dnd(qapp):
+    class DummyApp:
+        def pop(self):
+            pass
+        def push(self, w):
+            pass
+
+    dao = DAO()
+    feat = Feature(name="Fcat", desc="d")
+    dao.save(feat)
+    page = FeatureCreatePage(DummyApp())
+    assert [page.tabs.tabText(i) for i in range(page.tabs.count())] == [
+        "Info",
+        "Actions & Uses",
+        "Modifier",
+        "Grants",
+    ]
+    assert page.catalog_tabs.isHidden()
+    page.tabs.setCurrentIndex(page._grants_index)
+    assert not page.catalog_tabs.isHidden()
+    list_widget = page.catalog_tabs.widget(0)
+    item = list_widget.item(0)
+    rec = item.data(Qt.ItemDataRole.UserRole)
+    page.grants.add_record(rec)
+    assert page.grants.uuids() == [rec.uuid]
