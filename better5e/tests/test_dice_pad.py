@@ -3,14 +3,14 @@ import sys
 from pathlib import Path
 
 import pytest
-from PyQt6.QtCore import Qt, QPointF, QPoint
+from PyQt6.QtCore import QPoint, QPointF, Qt
 from PyQt6.QtGui import QMouseEvent, QWheelEvent
 from PyQt6.QtWidgets import QApplication
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from better5e.UI.main_screen.components.die_button import DieButton
-from better5e.UI.main_screen.components.dice_options import DiceOptionsPanel, ModifierControl
+from better5e.UI.components.dice_options import DiceOptionsPanel, ModifierControl
+from better5e.UI.components.die_button import DieButton
 
 
 @pytest.fixture(scope="session")
