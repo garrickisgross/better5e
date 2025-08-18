@@ -1,5 +1,5 @@
 from better5e.models.game_object import AnyGameObj
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, ValidationError
 import sqlite3
 from uuid import UUID
 from pathlib import Path
@@ -53,7 +53,13 @@ class DAO(metaclass=SingletonMeta):
     def load_by_kind(self, kind: str) -> list[AnyGameObj]:
         query = "SELECT data from game_objects WHERE kind = ?"
         cur = self.conn.execute(query, (kind,))
-        return [TA.validate_json(r[0]) for r in cur.fetchall()]
+        objs: list[AnyGameObj] = []
+        for r in cur.fetchall():
+            try:
+                objs.append(TA.validate_json(r[0]))
+            except ValidationError:
+                continue
+        return objs
         
         
 
