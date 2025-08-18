@@ -1,6 +1,6 @@
 import sys
-from pathlib import Path
 import types
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
@@ -8,16 +8,15 @@ import os
 import random
 from datetime import datetime
 
-from PyQt6.QtWidgets import QApplication, QMenu, QScrollArea, QFrame, QWidget
 import pytest
+from PyQt6.QtWidgets import QApplication, QFrame, QMenu, QScrollArea, QWidget
 
-from better5e.UI.main_screen.components.roll_history import RollHistoryPanel
-from better5e.UI.main_screen.components.dice_options import DiceOptionsPanel
-from better5e.UI.main_screen.components.section_header import SectionHeader
-from better5e.UI.main_screen.components.card_grid import CardGrid
-from better5e.UI.main_screen.components import homebrew_panel
-from better5e.UI.main_screen.components.homebrew_panel import HomebrewPanel
-from better5e.UI.main_screen.main_screen import MainScreen
+from better5e.UI.components.card_grid import CardGrid
+from better5e.UI.components.dice_options import DiceOptionsPanel
+from better5e.UI.components.homebrew_panel import HomebrewPanel
+from better5e.UI.components.roll_history import RollHistoryPanel
+from better5e.UI.components.section_header import SectionHeader
+from better5e.UI.pages.main_screen import MainScreen
 from better5e.UI.style.tokens import gutter
 
 
@@ -129,20 +128,17 @@ def test_section_header_and_card_grid(qapp):
     assert grid.layout().count() == 3
 
 
-def test_homebrew_panel_buttons_are_inert(qapp):
+def test_homebrew_panel_opens_pages(qapp):
     pushed: list[object] = []
-    app = types.SimpleNamespace(push=lambda w: pushed.append(w))
+    app = types.SimpleNamespace(push=lambda w: pushed.append(w), pop=lambda: None)
     panel = HomebrewPanel(app)
     received: list[str] = []
     panel.openHomebrew.connect(received.append)
 
     btn_feat = panel.layout().itemAt(1).widget()
     btn_feat.click()
-    assert not pushed
-
-    btn_class = panel.layout().itemAt(2).widget()
-    btn_class.click()
-    assert received == []
+    assert received == ["feature"]
+    assert pushed and pushed[0].__class__.__name__ == "CreateFeaturePage"
 
 
 def test_main_screen_scroll_area_styling(qapp):
@@ -177,7 +173,7 @@ def test_main_screen_signal_propagation(qapp, monkeypatch):
     hb_btn = screen.homebrew_panel.layout().itemAt(2).widget()
     hb_btn.click()
 
-    assert signals == ["see_chars", "new_char", "see_camps", "new_camp"]
+    assert signals == ["see_chars", "new_char", "see_camps", "new_camp", "class"]
 
     # roll wiring
     seq = iter([4, 3])
