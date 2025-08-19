@@ -29,6 +29,11 @@
   managing entries.
 - Feature descriptions are required; submissions should be blocked when the
   description is empty.
+- Modifiers and Grants editors mirror the actions editor: modifier entries
+  include target, operator and value fields with remove buttons; grants are
+  managed via a list of UUIDs with add/remove controls.
+- HomebrewPanel buttons are wired to actions: the feature button pushes a
+  FeatureFormPage while other buttons emit ``openHomebrew`` when clicked.
 
 ## Style
 - Page gutters are unified via `UI.core.style.tokens.gutter()` and used by the title

@@ -15,6 +15,7 @@ from __future__ import annotations
 from typing import Optional
 
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
@@ -30,6 +31,10 @@ from PyQt6.QtWidgets import (
 )
 
 from better5e.UI.core.basepage import BasePage
+from better5e.UI.core.style.tokens import gutter
+from better5e.UI.components.actions_editor import ActionsEditor
+from better5e.UI.components.modifiers_editor import ModifiersEditor
+from better5e.UI.components.grants_editor import GrantsEditor
 from better5e.models.game_object import Feature
 from better5e.models.enums import RechargeType
 from better5e.dao.sqlite import DAO
@@ -50,6 +55,8 @@ class FeatureFormPage(BasePage):
     def _build_ui(self) -> None:
         """Assemble widgets for the page."""
         layout: QVBoxLayout = self.layout()  # type: ignore[assignment]
+        layout.setContentsMargins(gutter(), gutter(), gutter(), gutter())
+        layout.setSpacing(12)
 
         # Header row with back button and page title
         header = QHBoxLayout()
@@ -59,18 +66,22 @@ class FeatureFormPage(BasePage):
         title_label = QLabel("Create Feature")
         title_label.setObjectName("FeatureFormTitle")
         title_label.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        font = QFont()
+        font.setPointSize(24)
+        font.setBold(True)
+        title_label.setFont(font)
         header.addWidget(title_label)
         header.addStretch(1)
         layout.addLayout(header)
 
-        # Tabs for organizing fields. Only the Info tab is functional;
-        # others serve as placeholders for future extensions.
+        # Tabs for organizing fields
         tabs = QTabWidget()
         layout.addWidget(tabs)
 
         # Info tab
         info_widget = QWidget()
         info_layout = QVBoxLayout(info_widget)
+        info_layout.setContentsMargins(gutter(), gutter(), gutter(), gutter())
         info_layout.setSpacing(12)
 
         # Name field
@@ -122,15 +133,17 @@ class FeatureFormPage(BasePage):
 
         tabs.addTab(info_widget, "Info")
 
-        # Placeholder tabs for future editing of Actions, Modifiers, Grants
-        for tab_name in ["Actions", "Modifiers", "Grants"]:
-            placeholder_widget = QWidget()
-            placeholder_layout = QVBoxLayout(placeholder_widget)
-            placeholder_label = QLabel(f"{tab_name} editing is not yet implemented.")
-            placeholder_label.setWordWrap(True)
-            placeholder_layout.addWidget(placeholder_label)
-            placeholder_layout.addStretch(1)
-            tabs.addTab(placeholder_widget, tab_name)
+        # Actions tab
+        self.actions_editor = ActionsEditor()
+        tabs.addTab(self.actions_editor, "Actions")
+
+        # Modifiers tab
+        self.modifiers_editor = ModifiersEditor()
+        tabs.addTab(self.modifiers_editor, "Modifiers")
+
+        # Grants tab
+        self.grants_editor = GrantsEditor()
+        tabs.addTab(self.grants_editor, "Grants")
 
         # Footer with submit button
         footer = QHBoxLayout()
@@ -190,6 +203,10 @@ class FeatureFormPage(BasePage):
             if isinstance(data, RechargeType):
                 recharge = data
 
+        actions = self.actions_editor.get_actions()
+        modifiers = self.modifiers_editor.get_modifiers()
+        grants = self.grants_editor.get_grants()
+
         # Construct the Feature model
         try:
             feature = Feature(
@@ -197,6 +214,9 @@ class FeatureFormPage(BasePage):
                 desc=desc,
                 uses_max=uses_max,
                 recharge=recharge,
+                actions=actions,
+                modifiers=modifiers,
+                grants=grants,
             )
         except Exception as exc:
             # Unexpected validation error; show message

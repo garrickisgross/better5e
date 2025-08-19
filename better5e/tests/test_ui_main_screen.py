@@ -17,6 +17,8 @@ from better5e.UI.components.section_header import SectionHeader
 from better5e.UI.components.card_grid import CardGrid
 from better5e.UI.components import homebrew_panel
 from better5e.UI.components.homebrew_panel import HomebrewPanel
+from better5e.UI.pages.feature_form_page import FeatureFormPage
+from PyQt6.QtWidgets import QWidget
 from better5e.UI.pages.main_screen import MainScreen
 from better5e.UI.core.style.tokens import gutter
 
@@ -129,20 +131,23 @@ def test_section_header_and_card_grid(qapp):
     assert grid.layout().count() == 3
 
 
-def test_homebrew_panel_buttons_are_inert(qapp):
+def test_homebrew_panel_buttons_are_inert(qapp, monkeypatch):
+    monkeypatch.setattr(
+        FeatureFormPage,
+        "__init__",
+        lambda self, app: QWidget.__init__(self),
+    )
     pushed: list[object] = []
     app = types.SimpleNamespace(push=lambda w: pushed.append(w))
     panel = HomebrewPanel(app)
     received: list[str] = []
     panel.openHomebrew.connect(received.append)
 
-    btn_feat = panel.layout().itemAt(1).widget()
-    btn_feat.click()
-    assert not pushed
+    panel._on_create("feature")
+    assert isinstance(pushed[0], FeatureFormPage)
 
-    btn_class = panel.layout().itemAt(2).widget()
-    btn_class.click()
-    assert received == []
+    panel._on_create("class")
+    assert received == ["class"]
 
 
 def test_main_screen_scroll_area_styling(qapp):
@@ -160,7 +165,13 @@ def test_main_screen_scroll_area_styling(qapp):
 
 
 def test_main_screen_signal_propagation(qapp, monkeypatch):
-    app = types.SimpleNamespace(push=lambda w: None)
+    monkeypatch.setattr(
+        FeatureFormPage,
+        "__init__",
+        lambda self, app: QWidget.__init__(self),
+    )
+    pushed: list[object] = []
+    app = types.SimpleNamespace(push=lambda w: pushed.append(w))
     screen = MainScreen(app)
 
     signals = []
@@ -174,10 +185,11 @@ def test_main_screen_signal_propagation(qapp, monkeypatch):
     screen.characters_create.click()
     screen.campaigns_header.button.click()
     screen.campaigns_create.click()
-    hb_btn = screen.homebrew_panel.layout().itemAt(2).widget()
-    hb_btn.click()
+    screen.homebrew_panel._on_create("feature")
+    screen.homebrew_panel._on_create("class")
 
-    assert signals == ["see_chars", "new_char", "see_camps", "new_camp"]
+    assert isinstance(pushed[0], FeatureFormPage)
+    assert signals == ["see_chars", "new_char", "see_camps", "new_camp", "class"]
 
     # roll wiring
     seq = iter([4, 3])
