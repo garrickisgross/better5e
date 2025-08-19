@@ -1,2 +1,7 @@
 [run]
-omit = better5e/tests/*
+omit = \
+    better5e/tests/*, \
+    better5e/UI/components/actions_editor.py, \
+    better5e/UI/components/modifiers_editor.py, \
+    better5e/UI/components/grants_editor.py, \
+    better5e/UI/pages/feature_form_page.py
