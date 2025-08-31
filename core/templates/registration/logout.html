@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Log in{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto">
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <h1 class="card-title">Log in</h1>
+      <form method="post" class="space-y-3">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="form-control">
+          <label class="label"><span class="label-text">Username</span></label>
+          {{ form.username|add_class:"input input-bordered" }}
+          {{ form.username.errors }}
+        </div>
+        <div class="form-control">
+          <label class="label"><span class="label-text">Password</span></label>
+          {{ form.password|add_class:"input input-bordered" }}
+          {{ form.password.errors }}
+        </div>
+        <button class="btn btn-primary w-full" type="submit">Log in</button>
+      </form>
+      <div class="divider">or</div>
+      <a class="btn btn-ghost w-full" href="{% url 'accounts:signup' %}">Create an account</a>
+      <a class="link mt-2" href="{% url 'password_reset' %}">Forgot your password?</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
