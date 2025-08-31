@@ -6,6 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}better5e{% endblock %}</title>
 
+    <!-- Early theme apply to prevent flash -->
+    <script>
+      try {
+        const savedTheme = localStorage.getItem("theme");
+        if (savedTheme) {
+          document.documentElement.setAttribute("data-theme", savedTheme);
+        }
+      } catch (e) {
+        // ignore
+      }
+    </script>
+
     <!-- Tailwind + daisyUI (CDN dev version) -->
     <link
       href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css"
@@ -23,15 +35,29 @@
       </div>
       <div class="flex-none flex items-center gap-2 mr-4">
         {% if request.user.is_authenticated %}
-          <span class="hidden sm:inline">Hi, <b>{{ request.user.username }}</b></span>
-
-          <!-- POST-only logout -->
-          <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-primary ml-2">Logout</button>
-          </form>
-
-          <a class="btn btn-ghost ml-2" href="{% url 'password_change' %}">Change Password</a>
+          <!-- User dropdown -->
+          <div class="dropdown dropdown-end">
+            <div tabindex="0" role="button" class="btn btn-ghost">
+              <span class="font-semibold">{{ request.user.username }}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1 opacity-60" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-56 p-2 shadow">
+              <li>
+                <a href="{% url 'accounts:settings' %}">Account settings</a>
+              </li>
+              <li>
+                <button type="button" id="themeToggleBtn">Toggle dark mode</button>
+              </li>
+              <li>
+                <form method="post" action="{% url 'logout' %}">
+                  {% csrf_token %}
+                  <button type="submit">Logout</button>
+                </form>
+              </li>
+            </ul>
+          </div>
         {% else %}
           <a class="btn btn-ghost" href="{% url 'login' %}">Login</a>
           <a class="btn btn-primary ml-2" href="{% url 'accounts:signup' %}">Sign up</a>
@@ -54,5 +80,24 @@
     <main class="container mx-auto p-4">
       {% block content %}{% endblock %}
     </main>
+    <script>
+      // Theme toggle behavior
+      (function() {
+        const toggleBtn = document.getElementById("themeToggleBtn");
+        function setTheme(theme) {
+          document.documentElement.setAttribute("data-theme", theme);
+          try { localStorage.setItem("theme", theme); } catch (e) {}
+        }
+        function currentTheme() {
+          return document.documentElement.getAttribute("data-theme") || "cupcake";
+        }
+        if (toggleBtn) {
+          toggleBtn.addEventListener("click", function() {
+            const next = currentTheme() === "dark" ? "cupcake" : "dark";
+            setTheme(next);
+          });
+        }
+      })();
+    </script>
   </body>
 </html>

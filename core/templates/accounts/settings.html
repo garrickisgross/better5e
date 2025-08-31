@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Account Settings · better5e{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <h2 class="card-title">Account Settings</h2>
+
+      <div class="mt-2 space-y-2">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-sm opacity-70">Username</div>
+            <div class="font-medium">{{ request.user.username }}</div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-sm opacity-70">Email</div>
+            <div class="font-medium">{{ request.user.email|default:'—' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="flex flex-wrap gap-2">
+        <a href="{% url 'password_change' %}" class="btn btn-ghost">Change password</a>
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline">Logout</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

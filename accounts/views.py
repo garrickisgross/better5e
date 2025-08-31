@@ -1,8 +1,9 @@
 from django.urls import reverse_lazy
-from django.views.generic import CreateView
+from django.views.generic import CreateView, TemplateView
 from django.contrib.auth import login
 from django.shortcuts import redirect
 from .forms import SignupForm
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 class SignupView(CreateView):
     form_class = SignupForm
@@ -17,3 +18,7 @@ class SignupView(CreateView):
 
     def get_success_url(self):
         return reverse_lazy("core:home")
+
+
+class AccountSettingsView(LoginRequiredMixin, TemplateView):
+    template_name = "accounts/settings.html"
