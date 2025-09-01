@@ -1,10 +1,75 @@
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-<div class="card bg-base-100 shadow">
-  <div class="card-body">
-    <h1 class="card-title">Welcome, {{ request.user.username }}!</h1>
-    <p>Success — you’re logged in.</p>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+  <!-- Main column -->
+  <div class="lg:col-span-9 space-y-10">
+    <!-- My Characters -->
+    <section>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl font-bold">My Characters</h2>
+        <a href="#" class="link link-primary">See All &gt;</a>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {% for i in "123" %}
+        <a href="#" class="card bg-base-100 border border-base-300 hover:border-primary/60 transition-colors">
+          <div class="card-body">
+            <div class="w-full aspect-square rounded-xl bg-base-200 flex items-center justify-center text-sm opacity-80">
+              Character {{ forloop.counter }}
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+
+      <div class="mt-4">
+        <a href="#" class="btn btn-primary w-full">Create New</a>
+      </div>
+    </section>
+
+    <!-- My Campaigns -->
+    <section>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl font-bold">My Campaigns</h2>
+        <a href="#" class="link link-primary">See All &gt;</a>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {% for i in "123" %}
+        <a href="#" class="card bg-base-100 border border-base-300 hover:border-primary/60 transition-colors">
+          <div class="card-body">
+            <div class="w-full aspect-square rounded-xl bg-base-200 flex items-center justify-center text-sm opacity-80">
+              Campaign {{ forloop.counter }}
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+
+      <div class="mt-4">
+        <a href="#" class="btn btn-primary w-full">Create New</a>
+      </div>
+    </section>
   </div>
+
+  <!-- Sidebar -->
+  <aside class="lg:col-span-3">
+    <div class="card bg-base-100 shadow">
+      <div class="card-body">
+        <h3 class="card-title">Homebrew</h3>
+        <div class="mt-2 space-y-3">
+          <a class="btn btn-outline btn-block" href="#">Create Feature</a>
+          <a class="btn btn-outline btn-block" href="#">Create Class</a>
+          <a class="btn btn-outline btn-block" href="#">Create Subclass</a>
+          <a class="btn btn-outline btn-block" href="#">Create Item</a>
+          <a class="btn btn-outline btn-block" href="#">Create Spellcasting</a>
+          <a class="btn btn-outline btn-block" href="#">Create Spell</a>
+          <a class="btn btn-outline btn-block" href="#">Create Race</a>
+          <a class="btn btn-outline btn-block" href="#">Create Background</a>
+        </div>
+      </div>
+    </div>
+  </aside>
 </div>
 {% endblock %}

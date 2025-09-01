@@ -1,0 +1,11 @@
+/* 3D dice canvas fills viewport and stays non-interactive */
+#diceStage { pointer-events: none; }
+#diceStage .dice-box-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  pointer-events: none;
+}
+

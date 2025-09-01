@@ -1,0 +1,53 @@
+<div id="diceStage" class="fixed inset-0 z-[1000] pointer-events-none"></div>
+
+<div id="diceFab" class="fixed bottom-4 left-4 z-50">
+  <div class="relative">
+    <button id="diceToggle" class="btn btn-primary btn-circle btn-lg shadow-xl" aria-label="Open dice roller" title="Dice">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8">
+        <path d="M11.25 4.47c.46-.26 1.04-.26 1.5 0l6.75 3.86c.46.26.75.76.75 1.3v7.72c0 .54-.29 1.04-.75 1.3l-6.75 3.86c-.46.26-1.04.26-1.5 0L4.5 18.65a1.5 1.5 0 01-.75-1.3V9.63c0-.54.29-1.04.75-1.3l6.75-3.86zM12 6.04L6 9.41v6.97l6 3.37 6-3.37V9.41L12 6.04z"/>
+        <circle cx="9.75" cy="11.25" r=".9"/>
+        <circle cx="14.25" cy="11.25" r=".9"/>
+        <circle cx="12" cy="14.25" r=".9"/>
+      </svg>
+    </button>
+    <div id="dicePanel" class="hidden absolute bottom-14 left-0">
+      <div class="card bg-base-100 shadow-xl w-80">
+        <div class="card-body p-3">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-semibold">Dice Roller</h3>
+            <button id="diceClose" class="btn btn-ghost btn-xs" aria-label="Close">✕</button>
+          </div>
+
+          <div id="diceHistory" class="bg-base-200 rounded-lg p-2 max-h-80 overflow-y-auto space-y-2">
+            <div id="diceHistoryEmpty" class="text-sm opacity-70 text-center py-6">No rolls yet</div>
+          </div>
+
+          <div class="mt-3 grid grid-cols-4 gap-2 select-none">
+            <button class="btn btn-sm relative" data-sides="2">d2 <span data-badge class="badge badge-secondary badge-sm absolute -top-1 -right-1 hidden">0</span></button>
+            <button class="btn btn-sm relative" data-sides="4">d4 <span data-badge class="badge badge-secondary badge-sm absolute -top-1 -right-1 hidden">0</span></button>
+            <button class="btn btn-sm relative" data-sides="6">d6 <span data-badge class="badge badge-secondary badge-sm absolute -top-1 -right-1 hidden">0</span></button>
+            <button class="btn btn-sm relative" data-sides="8">d8 <span data-badge class="badge badge-secondary badge-sm absolute -top-1 -right-1 hidden">0</span></button>
+            <button class="btn btn-sm relative" data-sides="10">d10 <span data-badge class="badge badge-secondary badge-sm absolute -top-1 -right-1 hidden">0</span></button>
+            <button class="btn btn-sm relative" data-sides="12">d12 <span data-badge class="badge badge-secondary badge-sm absolute -top-1 -right-1 hidden">0</span></button>
+            <button class="btn btn-sm relative" data-sides="20">d20 <span data-badge class="badge badge-secondary badge-sm absolute -top-1 -right-1 hidden">0</span></button>
+            <button class="btn btn-sm relative col-span-2" data-sides="100">d100 <span data-badge class="badge badge-secondary badge-sm absolute -top-1 -right-1 hidden">0</span></button>
+          </div>
+
+          <div class="mt-2 flex items-center justify-center gap-2">
+            <button id="diceModMinus" class="btn btn-sm">−</button>
+            <div id="diceModValue" class="btn btn-ghost btn-sm no-animation pointer-events-none select-none w-16 justify-center">0</div>
+            <button id="diceModPlus" class="btn btn-sm">+</button>
+          </div>
+
+          <div class="mt-2">
+            <button id="diceResetBtn" class="btn btn-outline w-full">Reset</button>
+          </div>
+          <div>
+            <button id="diceRollBtn" class="btn btn-primary w-full" disabled>Roll</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
