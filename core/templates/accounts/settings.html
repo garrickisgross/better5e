@@ -45,7 +45,6 @@
           <div class="flex gap-2">
             {{ dice_form.dice_external_theme_url|add_class:"input input-bordered grow" }}
             <button id="diceThemeTestBtn" type="button" class="btn btn-ghost">Test</button>
-            <button id="diceThemeLoadBtn" type="button" class="btn btn-outline">Load</button>
           </div>
           <label class="label"><span class="label-text-alt">{{ dice_form.dice_external_theme_url.help_text }}</span></label>
           {{ dice_form.dice_external_theme_url.errors }}
@@ -74,7 +73,7 @@
     const alerts = document.getElementById('diceThemeAlerts');
     const urlInput = document.getElementById('id_dice_external_theme_url');
     const btnTest = document.getElementById('diceThemeTestBtn');
-    const btnLoad = document.getElementById('diceThemeLoadBtn');
+    const form = document.querySelector('form');
 
     function addAlert(kind, text) {
       const klass = kind === 'success' ? 'alert-success' : (kind === 'warning' ? 'alert-warning' : 'alert-error');
@@ -104,8 +103,12 @@
       if (!url) { addAlert('error', 'Enter a URL to test.'); return; }
       btnTest.disabled = true; btnTest.classList.add('loading');
       try {
-        const resp = await postJSON('{% url "core:dice_theme_test" %}', { url });
-        addAlert('success', `Theme OK. Mesh: ${resp.meshFile}. Assets: ${resp.assets.length}`);
+        // Inspect to get meta and prewarm caches on first fetches
+        const t = await postJSON('{% url "core:dice_theme_test" %}', { url });
+        try { localStorage.setItem('diceThemeMeta:'+b64url(url), JSON.stringify({ themeColor: t.themeColor || null, materialType: t.materialType || null })); } catch(_){}
+        // Ask app to preview roll with this theme (non-persistent)
+        window.dispatchEvent(new CustomEvent('dice:theme-preview', { detail: { url } }));
+        addAlert('success', 'Previewing theme with a d20 roll…');
       } catch (e) {
         addAlert('error', e.message);
       } finally {
@@ -113,17 +116,51 @@
       }
     });
 
-    if (btnLoad) btnLoad.addEventListener('click', async () => {
+    function b64url(s) {
+      try { return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); } catch (_) { return ''; }
+    }
+    function progressAlert(title, max) {
+      const wrap = document.createElement('div');
+      wrap.className = 'alert alert-info shadow flex-col items-stretch';
+      wrap.innerHTML = `<div class="flex w-full justify-between items-center"><span>${title}</span><span data-count>0/${max}</span></div>
+                        <progress class="progress progress-primary mt-2" value="0" max="${max}"></progress>`;
+      alerts.prepend(wrap);
+      return {
+        el: wrap,
+        inc() { const prog = wrap.querySelector('progress'); const cnt = wrap.querySelector('[data-count]'); prog.value = Number(prog.value)+1; cnt.textContent = `${prog.value}/${prog.max}`; },
+        done(success=true, text='') { wrap.classList.remove('alert-info'); wrap.classList.add(success? 'alert-success' : 'alert-error'); if (text) wrap.querySelector('span').textContent = text; setTimeout(()=>wrap.remove(), 7000); }
+      };
+    }
+
+    // Intercept Save to async-load theme if URL provided
+    if (form) form.addEventListener('submit', async (ev) => {
       const url = urlInput.value.trim();
-      if (!url) { addAlert('error', 'Enter a URL to load.'); return; }
-      btnLoad.disabled = true; btnLoad.classList.add('loading');
+      if (!url) return; // no theme URL -> let normal submit persist preset/finish
+      ev.preventDefault();
+      let progress;
       try {
-        const resp = await postJSON('{% url "core:dice_theme_load" %}', { url });
-        addAlert('success', `Theme cached. Files saved: ${resp.saved.length}`);
+        const t = await postJSON('{% url "core:dice_theme_test" %}', { url });
+        const assets = t.assets || ['theme.config.json'];
+        const baseB64 = b64url(url);
+        try { localStorage.setItem('diceThemeMeta:'+baseB64, JSON.stringify({ themeColor: t.themeColor || null, materialType: t.materialType || null })); } catch(_){}
+        progress = progressAlert('Saving and caching theme…', assets.length);
+        const origin = window.location.origin;
+        for (const rel of assets) {
+          const safeRel = String(rel).replace(/^\/+/, '');
+          const proxied = `${origin}/dice-theme/${baseB64}/${safeRel}`;
+          const res = await fetch(proxied, { cache: 'reload' });
+          if (!res.ok) throw new Error(`Failed ${rel}: ${res.status}`);
+          await res.blob();
+          progress.inc();
+        }
+        progress.done(true, 'Theme cached. Applying…');
+        await postJSON('{% url "core:dice_theme_set" %}', { url });
+        window.diceUserPrefs = window.diceUserPrefs || {}; window.diceUserPrefs.externalThemeUrl = url;
+        window.dispatchEvent(new CustomEvent('dice:theme-updated', { detail: { url } }));
+        addAlert('success', 'Theme saved to your account and applied.');
       } catch (e) {
-        addAlert('error', e.message);
-      } finally {
-        btnLoad.disabled = false; btnLoad.classList.remove('loading');
+        if (progress) progress.done(false, e.message || 'Failed to save theme');
+        addAlert('error', e.message || 'Failed to save theme');
       }
     });
   })();

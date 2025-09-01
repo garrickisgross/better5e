@@ -315,31 +315,49 @@
           if (!url) return '';
           const b64 = b64url(url);
           const origin = window.location.origin;
-          return `${origin}/dice-theme/${b64}/`;
+          return `${origin}/dice-theme/${b64}`;
+        }
+        function themeMetaFromStorage(url) {
+          try { const v = localStorage.getItem('diceThemeMeta:'+b64url(url)); return v ? JSON.parse(v) : null; } catch (_) { return null; }
+        }
+        function currentThemeColor() {
+          if (state.externalThemeUrl) {
+            const meta = themeMetaFromStorage(state.externalThemeUrl);
+            if (meta && meta.themeColor) return meta.themeColor;
+          }
+          return (PRESETS[state.preset] || PRESETS.amethyst).color;
         }
 
         async function ensureDice3D() {
           if (dice3d.ready && dice3d.box) return dice3d.box;
           const mod = await import('https://unpkg.com/@3d-dice/dice-box@1.1.4/dist/dice-box.es.min.js');
           const DiceBox = mod.default;
-          const preset = PRESETS[state.preset] || PRESETS.amethyst;
           const finish = FINISH[state.finish] || FINISH.glossy;
-          const themeName = state.externalThemeUrl ? 'user-external' : 'default';
-          const externalThemes = state.externalThemeUrl ? { 'user-external': proxiedThemeBase(state.externalThemeUrl) } : {};
-          dice3d.box = new DiceBox({
+          const hasTheme = !!state.externalThemeUrl;
+          const opts = {
             container: '#diceStage',
             id: 'dice-canvas',
             origin: 'https://unpkg.com',
             assetPath: '/@3d-dice/dice-box@1.1.4/dist/assets/',
-            theme: themeName,
-            themeColor: preset.color,
-            externalThemes: externalThemes,
-            enableShadows: finish.shadows,
-            lightIntensity: finish.lightIntensity,
+            theme: hasTheme ? 'user-external' : 'default',
             delay: 12,
             scale: 5
-          });
+          };
+          if (hasTheme) {
+            opts.externalThemes = { 'user-external': proxiedThemeBase(state.externalThemeUrl) };
+            const color = currentThemeColor(); if (color) opts.themeColor = color;
+          } else {
+            const preset = PRESETS[state.preset] || PRESETS.amethyst;
+            opts.themeColor = preset.color;
+            opts.enableShadows = finish.shadows;
+            opts.lightIntensity = finish.lightIntensity;
+          }
+          dice3d.box = new DiceBox(opts);
           await dice3d.box.init();
+          // Hide canvas only when a roll completes
+          dice3d.box.onRollComplete = function() {
+            try { setTimeout(() => dice3d.box.hide(), 400); } catch (_) {}
+          };
           dice3d.ready = true;
           return dice3d.box;
         }
@@ -365,23 +383,29 @@
 
           // Ensure 3D dice and update appearance
           const box = await ensureDice3D();
-          const preset = PRESETS[state.preset] || PRESETS.amethyst;
-          const finish = FINISH[state.finish] || FINISH.glossy;
-          const themeName = state.externalThemeUrl ? 'user-external' : 'default';
-          const externalThemes = state.externalThemeUrl ? { 'user-external': proxiedThemeBase(state.externalThemeUrl) } : {};
-          await box.updateConfig({
-            theme: themeName,
-            externalThemes: externalThemes,
-            themeColor: preset.color,
-            enableShadows: finish.shadows,
-            lightIntensity: finish.lightIntensity
-          });
+          const hasTheme = !!state.externalThemeUrl;
+          const updateOpts = {
+            theme: hasTheme ? 'user-external' : 'default'
+          };
+          if (hasTheme) {
+            updateOpts.externalThemes = { 'user-external': proxiedThemeBase(state.externalThemeUrl) };
+            const color = currentThemeColor(); if (color) updateOpts.themeColor = color;
+          } else {
+            const preset = PRESETS[state.preset] || PRESETS.amethyst;
+            const finish = FINISH[state.finish] || FINISH.glossy;
+            updateOpts.themeColor = preset.color;
+            updateOpts.enableShadows = finish.shadows;
+            updateOpts.lightIntensity = finish.lightIntensity;
+          }
+          await box.updateConfig(updateOpts);
           box.show();
 
           // Roll in 3D and await actual results
           let resultsArray = [];
           try {
-            resultsArray = await box.roll(notations, { theme: 'default', themeColor: preset.color });
+            const rollOpts = hasTheme ? { theme: 'user-external', externalThemes: { 'user-external': proxiedThemeBase(state.externalThemeUrl) }, themeColor: currentThemeColor() } : { theme: 'default', themeColor: (PRESETS[state.preset]||PRESETS.amethyst).color };
+            if (!hasTheme) { const f = FINISH[state.finish] || FINISH.glossy; rollOpts.enableShadows = f.shadows; rollOpts.lightIntensity = f.lightIntensity; }
+            resultsArray = await box.roll(notations, rollOpts);
           } catch (e) {
             // Fallback to local RNG if 3D fails
             resultsArray = [];
@@ -405,8 +429,7 @@
           const timestamp = new Date().toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'});
           renderRollEntry({ formula, total, breakdown, timestamp });
 
-          // Soft-hide canvas shortly after
-          setTimeout(() => { try { box.hide(); } catch (_) {} }, 1200);
+          // Hide is now handled by onRollComplete callback configured in ensureDice3D()
         }
 
         // Events
@@ -447,6 +470,58 @@
 
         // Init
         updateRollCta();
+
+        // Apply theme updates coming from the settings page (persistent)
+        window.addEventListener('dice:theme-updated', async (e) => {
+          try {
+            const url = e.detail && e.detail.url ? String(e.detail.url) : '';
+            state.externalThemeUrl = url;
+            const box = await ensureDice3D();
+            const hasTheme = !!state.externalThemeUrl;
+            const opts = { theme: hasTheme ? 'user-external' : 'default' };
+            if (hasTheme) {
+              opts.externalThemes = { 'user-external': proxiedThemeBase(state.externalThemeUrl) };
+              const color = currentThemeColor(); if (color) opts.themeColor = color;
+            } else {
+              const preset = PRESETS[state.preset] || PRESETS.amethyst;
+              const finish = FINISH[state.finish] || FINISH.glossy;
+              opts.themeColor = preset.color; opts.enableShadows = finish.shadows; opts.lightIntensity = finish.lightIntensity;
+            }
+            await box.updateConfig(opts);
+          } catch (err) { console.warn('Failed to apply theme update', err); }
+        });
+
+        // Preview a theme without persisting: switch, roll 1d20, then restore
+        window.addEventListener('dice:theme-preview', async (e) => {
+          const newUrl = e.detail && e.detail.url ? String(e.detail.url) : '';
+          if (!newUrl) return;
+          const prevUrl = state.externalThemeUrl;
+          try {
+            const box = await ensureDice3D();
+            const ext = { 'user-external': proxiedThemeBase(newUrl) };
+            const color = currentThemeColor(newUrl);
+            await box.updateConfig({ theme: 'user-external', externalThemes: ext, themeColor: color });
+            await box.roll([{ sides: 'd20', qty: 1 }], { theme: 'user-external', externalThemes: ext, themeColor: color });
+          } catch (err) {
+            console.warn('Preview failed', err);
+          } finally {
+            try {
+              const box = await ensureDice3D();
+              state.externalThemeUrl = prevUrl;
+              const hasTheme = !!state.externalThemeUrl;
+              const opts = { theme: hasTheme ? 'user-external' : 'default' };
+              if (hasTheme) {
+                opts.externalThemes = { 'user-external': proxiedThemeBase(state.externalThemeUrl) };
+                const color2 = currentThemeColor(); if (color2) opts.themeColor = color2;
+              } else {
+                const preset = PRESETS[state.preset] || PRESETS.amethyst;
+                const finish = FINISH[state.finish] || FINISH.glossy;
+                opts.themeColor = preset.color; opts.enableShadows = finish.shadows; opts.lightIntensity = finish.lightIntensity;
+              }
+              await box.updateConfig(opts);
+            } catch(_) {}
+          }
+        });
       })();
     </script>
   </body>
