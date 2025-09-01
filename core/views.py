@@ -164,7 +164,18 @@ def dice_theme_test(request):
     add_tex(mat.get("diffuseTexture"))
     add_tex(mat.get("bumpTexture"))
     add_tex(mat.get("specularTexture"))
-    return JsonResponse({"ok": True, "message": "Theme config looks valid.", "meshFile": mesh, "assets": assets})
+    mat = data.get("material", {})
+    material_type = mat.get("type") if isinstance(mat, dict) else None
+    theme_color = data.get("themeColor")
+    return JsonResponse({
+        "ok": True,
+        "message": "Theme config looks valid.",
+        "meshFile": mesh,
+        "assets": assets,
+        "materialType": material_type,
+        "themeColor": theme_color,
+        "config": data,
+    })
 
 
 @login_required

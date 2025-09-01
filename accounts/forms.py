@@ -24,7 +24,7 @@ class DiceSettingsForm(forms.ModelForm):
         help_text=(
             "Optional: URL to a DiceBox-compatible theme folder (must contain theme.config.json). "
             "GitHub is supported — use a folder URL like "
-            "https://github.com/<user>/<repo>/tree/<branch>/<path-to-theme>."
+            "https://github.com/<user>/<repo>/tree/<branch>/<path-to-theme>. "
         ),
         widget=forms.URLInput(attrs={"placeholder": "https://…/mytheme"}),
     )
