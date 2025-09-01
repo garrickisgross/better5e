@@ -17,6 +17,14 @@
         // ignore
       }
     </script>
+    <script>
+      // Expose dice appearance prefs from server-side user, if available
+      window.diceUserPrefs = {
+        preset: "{% if request.user.is_authenticated %}{{ request.user.dice_preset|default:'amethyst' }}{% else %}amethyst{% endif %}",
+        finish: "{% if request.user.is_authenticated %}{{ request.user.dice_finish|default:'glossy' }}{% else %}glossy{% endif %}",
+        externalThemeUrl: "{% if request.user.is_authenticated %}{{ request.user.dice_external_theme_url|default:'' }}{% else %}{% endif %}"
+      };
+    </script>
 
     <!-- Tailwind + daisyUI (CDN dev version) -->
     <link
@@ -24,6 +32,20 @@
       rel="stylesheet"
     />
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 3D Dice (DiceBox) styles -->
+    <link rel="stylesheet" href="https://unpkg.com/@3d-dice/dice-box@1.1.4/dist/style.css" />
+    <style>
+      /* Ensure the 3D dice canvas fills the entire viewport */
+      #diceStage { pointer-events: none; }
+      #diceStage .dice-box-canvas {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        display: block;
+        pointer-events: none;
+      }
+    </style>
 
     <link rel="stylesheet" href="{% static 'css/site.css' %}">
   </head>
@@ -81,6 +103,9 @@
       {% block content %}{% endblock %}
     </main>
 
+    <!-- 3D Dice canvas mount -->
+    <div id="diceStage" class="fixed inset-0 z-[1000] pointer-events-none"></div>
+
     <!-- Dice FAB + Panel -->
     <div id="diceFab" class="fixed bottom-4 left-4 z-50">
       <div class="relative">
@@ -125,6 +150,8 @@
                 <div id="diceModValue" class="btn btn-ghost btn-sm no-animation pointer-events-none select-none w-16 justify-center">0</div>
                 <button id="diceModPlus" class="btn btn-sm">+</button>
               </div>
+
+              
 
               <div class="mt-2">
                 <button id="diceResetBtn" class="btn btn-outline w-full">Reset</button>
@@ -171,9 +198,17 @@
         const modMinus = document.getElementById('diceModMinus');
         const modPlus = document.getElementById('diceModPlus');
         const modValue = document.getElementById('diceModValue');
+        
 
         const DICE = [2,4,6,8,10,12,20,100];
-        const state = { counts: {}, mod: 0 };
+        const userPrefs = window.diceUserPrefs || {};
+        const state = {
+          counts: {},
+          mod: 0,
+          preset: userPrefs.preset || 'amethyst',
+          finish: userPrefs.finish || 'glossy',
+          externalThemeUrl: userPrefs.externalThemeUrl || ''
+        };
         DICE.forEach(s => state.counts[s] = 0);
 
         function showPanel() { panel.classList.remove('hidden'); }
@@ -253,25 +288,125 @@
           });
         }
 
-        function doRoll() {
-          const breakdown = [];
-          let total = 0;
+        // 3D dice integration (DiceBox)
+        const PRESETS = {
+          amethyst: { color: '#8b5cf6' },
+          emerald:  { color: '#10b981' },
+          ruby:     { color: '#ef4444' },
+          sapphire: { color: '#60a5fa' },
+          obsidian: { color: '#111827' },
+          ivory:    { color: '#e5e7eb' },
+          gold:     { color: '#f59e0b' },
+          pumpkin:  { color: '#fb923c' }
+        };
+        const FINISH = {
+          matte:  { lightIntensity: 0.75, shadows: true },
+          glossy: { lightIntensity: 1.1,  shadows: true },
+          pearl:  { lightIntensity: 0.95, shadows: true }
+        };
+
+        const dice3d = { box: null, ready: false };
+        function b64url(s) {
+          try {
+            return btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+          } catch (_) { return ''; }
+        }
+        function proxiedThemeBase(url) {
+          if (!url) return '';
+          const b64 = b64url(url);
+          const origin = window.location.origin;
+          return `${origin}/dice-theme/${b64}/`;
+        }
+
+        async function ensureDice3D() {
+          if (dice3d.ready && dice3d.box) return dice3d.box;
+          const mod = await import('https://unpkg.com/@3d-dice/dice-box@1.1.4/dist/dice-box.es.min.js');
+          const DiceBox = mod.default;
+          const preset = PRESETS[state.preset] || PRESETS.amethyst;
+          const finish = FINISH[state.finish] || FINISH.glossy;
+          const themeName = state.externalThemeUrl ? 'user-external' : 'default';
+          const externalThemes = state.externalThemeUrl ? { 'user-external': proxiedThemeBase(state.externalThemeUrl) } : {};
+          dice3d.box = new DiceBox({
+            container: '#diceStage',
+            id: 'dice-canvas',
+            origin: 'https://unpkg.com',
+            assetPath: '/@3d-dice/dice-box@1.1.4/dist/assets/',
+            theme: themeName,
+            themeColor: preset.color,
+            externalThemes: externalThemes,
+            enableShadows: finish.shadows,
+            lightIntensity: finish.lightIntensity,
+            delay: 12,
+            scale: 5
+          });
+          await dice3d.box.init();
+          dice3d.ready = true;
+          return dice3d.box;
+        }
+
+        async function doRoll() {
+          // Compose notation for DiceBox: array of objects per die type
+          const notations = [];
           const parts = [];
           DICE.forEach(s => {
             const count = state.counts[s];
             if (!count) return;
+            notations.push({ sides: `d${s}`, qty: count });
             parts.push(`${count}d${s}`);
-            const values = Array.from({length: count}, () => rollDie(s));
-            values.forEach(v => total += v);
-            breakdown.push({sides: s, values});
           });
+          if (notations.length === 0 && state.mod === 0) return;
+          // Build readable formula without duplicate '+'
+          let formula = parts.join(' + ');
           if (state.mod) {
-            parts.push(`${state.mod > 0 ? '+' : '−'} ${Math.abs(state.mod)}`);
-            total += state.mod;
+            const sign = state.mod > 0 ? '+' : '−';
+            const modAbs = Math.abs(state.mod);
+            formula = formula ? `${formula} ${sign} ${modAbs}` : `${sign} ${modAbs}`;
           }
-          const formula = parts.join(' + ').replace('+ −', '−');
+
+          // Ensure 3D dice and update appearance
+          const box = await ensureDice3D();
+          const preset = PRESETS[state.preset] || PRESETS.amethyst;
+          const finish = FINISH[state.finish] || FINISH.glossy;
+          const themeName = state.externalThemeUrl ? 'user-external' : 'default';
+          const externalThemes = state.externalThemeUrl ? { 'user-external': proxiedThemeBase(state.externalThemeUrl) } : {};
+          await box.updateConfig({
+            theme: themeName,
+            externalThemes: externalThemes,
+            themeColor: preset.color,
+            enableShadows: finish.shadows,
+            lightIntensity: finish.lightIntensity
+          });
+          box.show();
+
+          // Roll in 3D and await actual results
+          let resultsArray = [];
+          try {
+            resultsArray = await box.roll(notations, { theme: 'default', themeColor: preset.color });
+          } catch (e) {
+            // Fallback to local RNG if 3D fails
+            resultsArray = [];
+            DICE.forEach(s => {
+              const count = state.counts[s];
+              for (let i=0;i<count;i++) resultsArray.push({ sides: s, value: rollDie(s) });
+            });
+          }
+
+          // Build breakdown from actual results
+          const bySides = new Map();
+          for (const r of resultsArray) {
+            const s = typeof r.sides === 'string' ? parseInt(String(r.sides).replace(/\D/g,'')) : r.sides;
+            if (!bySides.has(s)) bySides.set(s, []);
+            if (Number.isFinite(r.value)) bySides.get(s).push(r.value);
+          }
+          const breakdown = Array.from(bySides.entries()).map(([sides, values]) => ({ sides, values }));
+          let total = 0;
+          for (const values of bySides.values()) total += values.reduce((a,b)=>a+b,0);
+          total += state.mod;
           const timestamp = new Date().toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'});
-          renderRollEntry({formula, total, breakdown, timestamp});
+          renderRollEntry({ formula, total, breakdown, timestamp });
+
+          // Soft-hide canvas shortly after
+          setTimeout(() => { try { box.hide(); } catch (_) {} }, 1200);
         }
 
         // Events
