@@ -1,15 +1,50 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, JsonResponse
+from django.contrib import messages
 import base64
 from urllib.parse import urlparse
 import urllib.request
 import urllib.error
 
+from .forms import FeatForm
+from .models import Feat, Spell, Item, Language, Skill
+
 
 @login_required
 def home(request):
     return render(request, "home.html", {"title": "Dashboard"})
+
+
+@login_required
+def feat_create(request):
+    if request.method == "POST":
+        form = FeatForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Feature created.")
+            return redirect("core:home")
+    else:
+        form = FeatForm()
+    return render(request, "feat_form.html", {"form": form, "title": "Create Feature"})
+
+
+@login_required
+def creation_search(request):
+    q = request.GET.get("q", "")
+    results = []
+    if q:
+        lookups = [
+            ("feat", Feat.objects.filter(name__icontains=q)[:5]),
+            ("spell", Spell.objects.filter(name__icontains=q)[:5]),
+            ("item", Item.objects.filter(name__icontains=q)[:5]),
+            ("language", Language.objects.filter(name__icontains=q)[:5]),
+            ("skill", Skill.objects.filter(name__icontains=q)[:5]),
+        ]
+        for model_name, qs in lookups:
+            for obj in qs:
+                results.append({"model": model_name, "id": obj.id, "name": obj.name})
+    return JsonResponse({"results": results})
 
 
 def _transform_github_base(url: str) -> str:
