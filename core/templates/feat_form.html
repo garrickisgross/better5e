@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Create Feature{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Create Feature</h1>
+<form method="post" class="space-y-6">
+    {% csrf_token %}
+    <div>
+        <label for="{{ form.name.id_for_label }}" class="block mb-1 font-semibold">Name</label>
+        {{ form.name }}
+    </div>
+    <div>
+        <label for="{{ form.description.id_for_label }}" class="block mb-1 font-semibold">Description</label>
+        {{ form.description }}
+    </div>
+    <fieldset class="border p-4 rounded-lg">
+        <legend class="font-semibold">Prerequisites (optional)</legend>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label for="{{ form.prerequisite_class.id_for_label }}" class="block mb-1">Class</label>
+                {{ form.prerequisite_class }}
+            </div>
+            <div>
+                <label for="{{ form.prerequisite_class_level.id_for_label }}" class="block mb-1">Class Level</label>
+                {{ form.prerequisite_class_level }}
+            </div>
+            <div>
+                <label for="{{ form.prerequisite_feature.id_for_label }}" class="block mb-1">Feature</label>
+                {{ form.prerequisite_feature }}
+            </div>
+            <div>
+                <label for="{{ form.prerequisite_total_level.id_for_label }}" class="block mb-1">Total Level</label>
+                {{ form.prerequisite_total_level }}
+            </div>
+            <div>
+                <label for="{{ form.prerequisite_species.id_for_label }}" class="block mb-1">Species</label>
+                {{ form.prerequisite_species }}
+            </div>
+        </div>
+    </fieldset>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+            <label for="{{ form.charges.id_for_label }}" class="block mb-1">Charges</label>
+            {{ form.charges }}
+        </div>
+        <div>
+            <label for="{{ form.recharge_type.id_for_label }}" class="block mb-1">Recharge Type</label>
+            {{ form.recharge_type }}
+        </div>
+    </div>
+    <div>
+        <label class="block mb-1 font-semibold">Grants (optional)</label>
+        <input id="grant-search" type="text" class="input input-bordered w-full" placeholder="Search creations..." autocomplete="off">
+        <div id="grant-results" class="mt-2 space-x-2"></div>
+        <div id="grant-selected" class="mt-2 space-x-2"></div>
+        {{ form.grants }}
+    </div>
+    <div>
+        <button type="submit" class="btn btn-primary">Save Feature</button>
+    </div>
+</form>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+const searchInput = document.getElementById('grant-search');
+const resultsDiv = document.getElementById('grant-results');
+const selectedDiv = document.getElementById('grant-selected');
+const hiddenInput = document.getElementById('id_grants');
+
+function updateHidden() {
+  const data = Array.from(selectedDiv.children).map(el => ({model: el.dataset.model, id: parseInt(el.dataset.id)}));
+  hiddenInput.value = JSON.stringify(data);
+}
+
+function addGrant(item) {
+  const badge = document.createElement('span');
+  badge.className = 'badge badge-outline mr-1 mb-1';
+  badge.textContent = item.model + ': ' + item.name;
+  badge.dataset.model = item.model;
+  badge.dataset.id = item.id;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'ml-1 text-xs';
+  btn.textContent = '\u2715';
+  btn.addEventListener('click', () => {
+    selectedDiv.removeChild(badge);
+    updateHidden();
+  });
+  badge.appendChild(btn);
+  selectedDiv.appendChild(badge);
+  updateHidden();
+}
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim();
+  if (!q) {
+    resultsDiv.innerHTML = '';
+    return;
+  }
+  fetch(`/api/search?q=${encodeURIComponent(q)}`)
+    .then(resp => resp.json())
+    .then(data => {
+      resultsDiv.innerHTML = '';
+      data.results.forEach(item => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-xs btn-outline mr-1 mb-1';
+        btn.textContent = item.model + ': ' + item.name;
+        btn.addEventListener('click', () => addGrant(item));
+        resultsDiv.appendChild(btn);
+      });
+    });
+});
+</script>
+{% endblock %}
