@@ -41,7 +41,3 @@ Follow these steps to run the project locally:
 - **Dice Theme Proxy:** Endpoints that validate and proxy remote DiceBox themes, with basic caching and GitHub URL transformation.
 - **Protected Dashboard:** Authenticated landing page placeholder for future tools.
 
-## Contributing
-
-See [AGENTS.md](AGENTS.md) for contribution guidelines.
-
