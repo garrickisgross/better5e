@@ -1,347 +1,332 @@
-from collections import defaultdict
+from __future__ import annotations
+
+from typing import Iterable, Optional
+
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models import Sum, Q, Manager
-from django.forms import ValidationError
-from typing import TYPE_CHECKING, Optional
 
 
-# Provide a lightweight, type-checker-friendly alias for related managers
-# without changing runtime behavior or incurring heavy imports.
-if TYPE_CHECKING:
-    from django.db.models.manager import RelatedManager as _RelatedManager
-else:
-    _RelatedManager = Manager  # type: ignore[assignment]
+# Lightweight, extensible models for a 5e-style character system.
+# See core/character.md for the broader data model vision. This file provides
+# the core entities to create characters with abilities, classes, skills, and
+# common lookups (species, languages, backgrounds, feats, spells, items).
 
-# TODO Keep this helper to handle future type-checking issues gracefully.
 
-class Named(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+class TimeStampedModel(models.Model):
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
 
     class Meta:
         abstract = True
 
-    def __str__(self):
+
+class Language(TimeStampedModel):
+    name = models.CharField(max_length=64, unique=True)
+    description = models.TextField(blank=True, default="")
+
+    def __str__(self) -> str:  # pragma: no cover - trivial
         return self.name
 
 
-class CharacterClass(Named):
-    hit_die = models.PositiveSmallIntegerField(default=8)
-    # TODO finish implementing class, spec can be found in class.md
+class Skill(TimeStampedModel):
+    ABILITY_CHOICES = [
+        ("str", "Strength"),
+        ("dex", "Dexterity"),
+        ("con", "Constitution"),
+        ("int", "Intelligence"),
+        ("wis", "Wisdom"),
+        ("cha", "Charisma"),
+    ]
 
-class Subclass(CharacterClass):
-    parent_class = models.ForeignKey("core.CharacterClass", on_delete=models.CASCADE, related_name="subclasses")
-    # Note: Multi-table inheritance prevents adding a constraint over parent's fields here.
-
-
-class Origin(Named):
-    #TODO implement Origin, spec can be found in origin.md
-    pass
-
-class Background(Named):
-    #TODO implement Background, spec can be found in background.md
-    pass
-
-class Species(Named):
-    #TODO implement Species, spec can be found in species.md
-    pass
-
-class Feature(Named):
-    class Category(models.TextChoices):
-        ORIGIN = "origin", "Origin"
-        BACKGROUND = "background", "Background"
-        CLASS = "class", "Class"
-        SUBCLASS = "subclass", "Subclass"
-        SPECIES = "species", "Species"
-        OTHER = "other", "Other"
-
-    class Recharge(models.TextChoices):
-        NONE = "none", "None"
-        SHORT_REST = "short_rest", "Short Rest"
-        LONG_REST = "long_rest", "Long Rest"
-        DAILY_DAWN = "daily_dawn", "Daily (Dawn)"
-        DAILY_DUSK = "daily_dusk", "Daily (Dusk)"
-
-    # Optional categorization to help determine source/origin
-    category = models.CharField(
-        max_length=20,
-        choices=Category.choices,
-        blank=True,
-        default="",
-        help_text="Optional feature category (origin, background, class, etc).",
-    )
-
-    # Narrative/body description
+    name = models.CharField(max_length=64, unique=True)
+    ability = models.CharField(max_length=3, choices=ABILITY_CHOICES)
     description = models.TextField(blank=True, default="")
 
-    # Flexible payload describing what this feature grants.
-    # Stored as JSON for extensibility: e.g. {"grants": [{"type": "proficiency", ...}]}
-    benefit = models.JSONField(default=dict, blank=True)
-
-    # Limited use tracking blueprint
-    max_charges = models.PositiveSmallIntegerField(null=True, blank=True)
-    recharge = models.CharField(
-        max_length=20,
-        choices=Recharge.choices,
-        blank=True,
-        default="",
-        help_text="When limited uses recharge.",
-    )
-
-    # Prerequisites for automatic mounting based on character makeup
-    min_level = models.PositiveSmallIntegerField(default=1)
-    requires_class = models.ForeignKey(
-        "core.CharacterClass",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="features_requiring_class",
-    )
-    requires_subclass = models.ForeignKey(
-        "core.Subclass",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="features_requiring_subclass",
-    )
-    requires_origin = models.ForeignKey(
-        "core.Origin",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="granted_features",
-    )
-    requires_background = models.ForeignKey(
-        "core.Background",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="granted_features",
-    )
-    requires_species = models.ForeignKey(
-        "core.Species",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="granted_features",
-    )
-
-    class Meta:  # type: ignore
-        indexes = [
-            models.Index(fields=["category"]),
-            models.Index(fields=["min_level"]),
-        ]
-
-    def clean(self) -> None:
-        # If a subclass is required, ensure it matches the required class when provided
-        if self.requires_subclass and self.requires_class:
-            if self.requires_subclass.parent_class_id != self.requires_class_id:
-                raise ValidationError(
-                    "requires_subclass: Subclass does not belong to the required class"
-                )
-
-        # If recharge specified, feature should have max_charges
-        if self.recharge and not self.max_charges:
-            raise ValidationError("recharge: requires max_charges to be set")
-
-    @property
-    def is_limited_use(self) -> bool:
-        return bool(self.max_charges)
-
-
-class CharacterFeature(models.Model):
-    """Join model capturing per-character feature state (e.g., charges)."""
-    character = models.ForeignKey(
-        "core.Character",
-        on_delete=models.CASCADE,
-        related_name="character_features",
-    )
-    feature = models.ForeignKey(
-        "core.Feature",
-        on_delete=models.CASCADE,
-        related_name="character_features",
-    )
-    current_charges = models.PositiveSmallIntegerField(null=True, blank=True)
-    state = models.JSONField(default=dict, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
     class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=["character", "feature"], name="uq_char_feature_once"),
-        ]
+        ordering = ["name"]
 
     def __str__(self) -> str:  # pragma: no cover - trivial
-        return f"{self.character} -> {self.feature}"
-
-class Item(Named):
-    #TODO implement Item, spec can be found in item.md
-    pass
+        return f"{self.name} ({self.get_ability_display()})"
 
 
-class Character(models.Model):
-    if TYPE_CHECKING:
-        class_levels: "_RelatedManager[CharacterClassLevel]"
-        features: "_RelatedManager[Feature]"
+class Species(TimeStampedModel):
+    SIZE_CHOICES = [
+        ("tiny", "Tiny"),
+        ("small", "Small"),
+        ("medium", "Medium"),
+        ("large", "Large"),
+    ]
 
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="characters",
-    )
+    name = models.CharField(max_length=64, unique=True)
+    speed = models.PositiveSmallIntegerField(default=30)
+    size = models.CharField(max_length=8, choices=SIZE_CHOICES, default="medium")
+    alignment = models.TextField(blank=True, default="")
+    age = models.TextField(blank=True, default="")
+    languages = models.ManyToManyField(Language, blank=True, related_name="species")
+    # Arbitrary extensibility: bonuses, traits, options, etc.
+    data = models.JSONField(blank=True, default=dict)
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    name = models.CharField(max_length=100)
-    level = models.PositiveSmallIntegerField(default=1)
-    exp = models.PositiveIntegerField(default=0)
-
-    # Features currently attached to this character
-    features = models.ManyToManyField(
-        "core.Feature",
-        through="core.CharacterFeature",
-        related_name="characters",
-        blank=True,
-    )
-
-    origin = models.ForeignKey(
-        "core.Origin",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="characters",
-    )
-
-    background = models.ForeignKey(
-        "core.Background",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="characters"   
-    )
-    
     class Meta:
-        ordering = ["-updated_at", "name"],
-        unique_together = [("owner", "name")]
+        verbose_name_plural = "species"
+        ordering = ["name"]
 
-    def __str__(self):
-        return f"{self.name} - {self.total_level}"
-    
-    @property
-    def total_level(self):
-        agg = self.class_levels.aggregate(total=Sum("levels")) # type: ignore
-        return agg["total"] or 0
-    
-    @property
-    def classes_summary(self) -> str:
-        """
-        e.g., 'F4/W3' by summing levels per class.
-        """
-        levels = defaultdict(int)
-        #TODO fix type checking here or adjust code as needed so lsp doesn't highlight error. 
-        for row in self.class_levels.select_related("character_class").only(
-            "character_class__name", "levels"
-        ):
-            # FK is non-null (PROTECT), so mypy/pyright are fine with attribute access
-            name = row.character_class.name
-            levels[name] += row.levels
+    def __str__(self) -> str:  # pragma: no cover - trivial
+        return self.name
 
-        parts = [f"{name}{lvl}" for name, lvl in sorted(levels.items())]
-        return "/".join(parts) if parts else "—"
-    
+
+class Subrace(TimeStampedModel):
+    species = models.ForeignKey(Species, on_delete=models.CASCADE, related_name="subraces")
+    name = models.CharField(max_length=64)
+    data = models.JSONField(blank=True, default=dict)
+
+    class Meta:
+        unique_together = ("species", "name")
+        ordering = ["species__name", "name"]
+
+    def __str__(self) -> str:  # pragma: no cover - trivial
+        return f"{self.species}: {self.name}"
+
+
+class Background(TimeStampedModel):
+    name = models.CharField(max_length=64, unique=True)
+    description = models.TextField(blank=True, default="")
+    languages = models.ManyToManyField(Language, blank=True, related_name="backgrounds")
+    # Optional: backgrounds often grant two fixed skill proficiencies
+    skills = models.ManyToManyField(Skill, blank=True, related_name="backgrounds")
+    data = models.JSONField(blank=True, default=dict)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self) -> str:  # pragma: no cover - trivial
+        return self.name
+
+
+class Feat(TimeStampedModel):
+    name = models.CharField(max_length=96, unique=True)
+    description = models.TextField()
+    data = models.JSONField(blank=True, default=dict)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self) -> str:  # pragma: no cover - trivial
+        return self.name
+
+
+class Class(TimeStampedModel):
+    name = models.CharField(max_length=64, unique=True)
+    hit_die = models.PositiveSmallIntegerField(default=8)
+    # e.g., ["str", "con"] for Barbarian
+    saving_throws = models.JSONField(blank=True, default=list)
+    # Example: {"choose": 2, "from": [skill_ids...]}
+    skill_proficiency_options = models.JSONField(blank=True, default=dict)
+    data = models.JSONField(blank=True, default=dict)
+
+    class Meta:
+        verbose_name_plural = "classes"
+        ordering = ["name"]
+
+    def __str__(self) -> str:  # pragma: no cover - trivial
+        return self.name
+
+
+class Subclass(TimeStampedModel):
+    parent_class = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="subclasses")
+    name = models.CharField(max_length=64)
+    data = models.JSONField(blank=True, default=dict)
+
+    class Meta:
+        unique_together = ("parent_class", "name")
+        ordering = ["parent_class__name", "name"]
+
+    def __str__(self) -> str:  # pragma: no cover - trivial
+        return f"{self.parent_class}: {self.name}"
+
+
+class Spell(TimeStampedModel):
+    name = models.CharField(max_length=96, unique=True)
+    level = models.PositiveSmallIntegerField(default=0)
+    school = models.CharField(max_length=32, blank=True, default="")
+    casting_time = models.CharField(max_length=64, blank=True, default="")
+    range = models.CharField(max_length=64, blank=True, default="")
+    components = models.CharField(max_length=64, blank=True, default="")
+    duration = models.CharField(max_length=64, blank=True, default="")
+    description = models.TextField(blank=True, default="")
+    data = models.JSONField(blank=True, default=dict)
+
+    class Meta:
+        ordering = ["level", "name"]
+
+    def __str__(self) -> str:  # pragma: no cover - trivial
+        return f"{self.name} (Lv {self.level})"
+
+
+class Item(TimeStampedModel):
+    name = models.CharField(max_length=96, unique=True)
+    category = models.CharField(max_length=48, blank=True, default="")
+    weight = models.FloatField(blank=True, null=True)
+    description = models.TextField(blank=True, default="")
+    data = models.JSONField(blank=True, default=dict)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self) -> str:  # pragma: no cover - trivial
+        return self.name
+
+
+class Character(TimeStampedModel):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="characters")
+    name = models.CharField(max_length=96)
+
+    # Lineage and story
+    species = models.ForeignKey(Species, on_delete=models.SET_NULL, null=True, blank=True, related_name="characters")
+    subrace = models.ForeignKey(Subrace, on_delete=models.SET_NULL, null=True, blank=True, related_name="characters")
+    background = models.ForeignKey(Background, on_delete=models.SET_NULL, null=True, blank=True, related_name="characters")
+
+    # Ability scores (1..30)
+    str_score = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(30)], default=10)
+    dex_score = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(30)], default=10)
+    con_score = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(30)], default=10)
+    int_score = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(30)], default=10)
+    wis_score = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(30)], default=10)
+    cha_score = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(30)], default=10)
+
+    alignment = models.CharField(max_length=32, blank=True, default="")
+    xp = models.PositiveIntegerField(default=0)
+    inspiration = models.BooleanField(default=False)
+
+    # Hit points (current state tracked here).
+    hp_current = models.IntegerField(default=0)
+    hp_temp = models.IntegerField(default=0)
+
+    # Finalized languages and feats chosen for this character
+    languages = models.ManyToManyField(Language, blank=True, related_name="characters")
+    feats = models.ManyToManyField(Feat, blank=True, related_name="characters")
+
+    # Misc extensibility: coins, notes, UI toggles, custom flags, etc.
+    data = models.JSONField(blank=True, default=dict)
+
+    class Meta:
+        indexes = [models.Index(fields=["user", "name"])]
+        unique_together = ("user", "name")
+        ordering = ["name"]
+
+    def __str__(self) -> str:  # pragma: no cover - trivial
+        return f"{self.name}"
+
+    # ---- Derived values & helpers ----
     @staticmethod
-    def ability_mod(score: int) -> int:
+    def ability_modifier(score: int) -> int:
         return (score - 10) // 2
-    
-    #TODO Determine if a custom clean function is needed, and implement. 
 
-    def save(self, *args, **kwargs):
-        self.full_clean()  # enforce clean() on save, including in admin/shell
-        return super().save(*args, **kwargs)
+    @property
+    def level_total(self) -> int:
+        agg = self.classes.aggregate(total=models.Sum("level"))
+        return int(agg["total"] or 0)
 
-    # Feature mounting helpers
-    def can_mount_feature(self, feature: "Feature") -> bool:
-        # Level gate
-        if feature.min_level and self.total_level < feature.min_level:
-            return False
+    @property
+    def proficiency_bonus(self) -> int:
+        lvl = self.level_total
+        if lvl <= 0:
+            return 2
+        if lvl <= 4:
+            return 2
+        if lvl <= 8:
+            return 3
+        if lvl <= 12:
+            return 4
+        if lvl <= 16:
+            return 5
+        return 6
 
-        # Origin/background/species gates (species not yet on Character; skip if required)
-        if feature.requires_origin_id and self.origin_id != feature.requires_origin_id:
-            return False
-        if feature.requires_background_id and self.background_id != feature.requires_background_id:
-            return False
-        # If requires_species is set but Character lacks species, conservatively disallow
-        if feature.requires_species_id is not None:
-            # Character has no species field currently; reject since requirement can't be satisfied
-            return False
+    def ability_score(self, ability: str) -> int:
+        ability = ability.lower()
+        return {
+            "str": self.str_score,
+            "dex": self.dex_score,
+            "con": self.con_score,
+            "int": self.int_score,
+            "wis": self.wis_score,
+            "cha": self.cha_score,
+        }[ability]
 
-        # Class gate
-        if feature.requires_class_id:
-            if not self.class_levels.filter(character_class_id=feature.requires_class_id).exists():
-                return False
+    def ability_mod(self, ability: str) -> int:
+        return self.ability_modifier(self.ability_score(ability))
 
-        # Subclass gate
-        if feature.requires_subclass_id:
-            if not self.class_levels.filter(subclass_id=feature.requires_subclass_id).exists():
-                return False
+    # Skill proficiency: 0 = none, 1 = proficient, 2 = expertise
+    def skill_proficiency_level(self, skill: Skill | int) -> int:
+        skill_id = skill.pk if isinstance(skill, Skill) else int(skill)
+        rel = self.skill_links.filter(skill_id=skill_id).first()
+        if not rel:
+            return 0
+        return 2 if rel.expertise else 1
 
-        return True
+    def skill_modifier(self, skill: Skill) -> int:
+        base = self.ability_mod(skill.ability)
+        prof_level = self.skill_proficiency_level(skill)
+        return base + (self.proficiency_bonus * prof_level)
 
-    def mount_feature(self, feature: "Feature") -> "CharacterFeature":
-        if not self.can_mount_feature(feature):
-            raise ValidationError("Character does not meet prerequisites for this feature")
+    def proficient_saving_throws(self) -> set[str]:
+        profs: set[str] = set()
+        for cc in self.classes.select_related("clazz").all():
+            for ab in (cc.clazz.saving_throws or []):
+                profs.add(ab)
+        return profs
 
-        # Idempotent mount: return existing row if present
-        cf, created = CharacterFeature.objects.get_or_create(
-            character=self, feature=feature,
-            defaults={
-                "current_charges": feature.max_charges if feature.max_charges is not None else None,
-            },
-        )
-        # If created is False but feature has charges and current_charges is None, top it up
-        if not created and feature.max_charges is not None and cf.current_charges is None:
-            cf.current_charges = feature.max_charges
-            cf.save(update_fields=["current_charges"])
-        return cf
-    
+    def saving_throw_modifier(self, ability: str) -> int:
+        base = self.ability_mod(ability)
+        return base + (self.proficiency_bonus if ability in self.proficient_saving_throws() else 0)
 
-class CharacterClassLevel(models.Model):
-    if TYPE_CHECKING:
-        subclass_id: Optional[int]
-        character_class_id: Optional[int]
-        character_class_name: Optional[str]
 
-    character = models.ForeignKey(
-        "core.Character",
-        on_delete=models.CASCADE,
-        related_name="class_levels"
-    )
-
-    character_class = models.ForeignKey(
-        "core.CharacterClass",
-        on_delete=models.PROTECT,
-        related_name="character_levels"
-    )
-
-    subclass = models.ForeignKey(
-        "core.Subclass",
-        on_delete=models.PROTECT,
-        related_name="subclass_levels"
-    )
-
-    levels = models.PositiveSmallIntegerField(default=1)
+class CharacterClass(TimeStampedModel):
+    character = models.ForeignKey(Character, on_delete=models.CASCADE, related_name="classes")
+    clazz = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="character_memberships")
+    subclass = models.ForeignKey(Subclass, on_delete=models.SET_NULL, null=True, blank=True, related_name="character_memberships")
+    level = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(20)], default=1)
+    is_primary = models.BooleanField(default=False)
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=["character", "character_class"], name="uq_char_one_row_per_class"),
-            models.CheckConstraint(check=Q(levels__gte=1), name="ck_levels_gte_1")
-        ]
+        unique_together = ("character", "clazz")
+        indexes = [models.Index(fields=["character", "clazz"])]
 
-    def __str__(self):
-        sub = f" / {self.subclass}" if self.subclass else ""
-        return f"{self.character} -> {self.character_class} {self.levels}{sub}"
-    
-    def clean(self) -> None:
-        if self.subclass and self.subclass.parent_class_id != self.character_class_id:
-            raise ValidationError("subclass: Subclass does not belong to selected class")
-    
-    
+    def __str__(self) -> str:  # pragma: no cover - trivial
+        return f"{self.character} - {self.clazz} {self.level}"
+
+
+class CharacterSkill(TimeStampedModel):
+    character = models.ForeignKey(Character, on_delete=models.CASCADE, related_name="skill_links")
+    skill = models.ForeignKey(Skill, on_delete=models.CASCADE, related_name="character_links")
+    expertise = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ("character", "skill")
+        indexes = [models.Index(fields=["character", "skill"])]
+
+    def __str__(self) -> str:  # pragma: no cover - trivial
+        return f"{self.character} - {self.skill} ({'Expertise' if self.expertise else 'Proficient'})"
+
+
+class CharacterItem(TimeStampedModel):
+    character = models.ForeignKey(Character, on_delete=models.CASCADE, related_name="items")
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="character_items")
+    quantity = models.PositiveIntegerField(default=1)
+    data = models.JSONField(blank=True, default=dict)
+
+    class Meta:
+        unique_together = ("character", "item")
+        indexes = [models.Index(fields=["character", "item"])]
+
+
+class CharacterSpell(TimeStampedModel):
+    character = models.ForeignKey(Character, on_delete=models.CASCADE, related_name="spells")
+    spell = models.ForeignKey(Spell, on_delete=models.CASCADE, related_name="character_spells")
+    known = models.BooleanField(default=True)
+    prepared = models.BooleanField(default=False)
+    data = models.JSONField(blank=True, default=dict)
+
+    class Meta:
+        unique_together = ("character", "spell")
+        indexes = [models.Index(fields=["character", "spell"])]

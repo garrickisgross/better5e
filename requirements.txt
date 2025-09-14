@@ -1,5 +1,9 @@
 asgiref==3.9.1
 Django==5.2.5
+django-stubs==5.2.5
+django-stubs-ext==5.2.5
 django-widget-tweaks==1.5.0
 sqlparse==0.5.3
+tomli==2.2.1
+types-PyYAML==6.0.12.20250822
 typing_extensions==4.15.0
