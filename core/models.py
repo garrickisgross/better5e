@@ -4,13 +4,6 @@ from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-
-# Lightweight, extensible models for a 5e-style character system.
-# See core/character.md for the broader data model vision. This file provides
-# the core entities to create characters with abilities, classes, skills, and
-# common lookups (species, languages, backgrounds, feats, spells, items).
-
-
 class TimeStampedModel(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -71,20 +64,6 @@ class Species(TimeStampedModel):
 
     def __str__(self) -> str:  # pragma: no cover - trivial
         return self.name
-
-
-class Subrace(TimeStampedModel):
-    species = models.ForeignKey(Species, on_delete=models.CASCADE, related_name="subraces")
-    name = models.CharField(max_length=64)
-    data = models.JSONField(blank=True, default=dict)
-
-    class Meta: # type: ignore
-        unique_together = ("species", "name")
-        ordering = ["species__name", "name"]
-
-    def __str__(self) -> str:  # pragma: no cover - trivial
-        return f"{self.species}: {self.name}"
-
 
 class Background(TimeStampedModel):
     name = models.CharField(max_length=64, unique=True)
@@ -181,7 +160,6 @@ class Character(TimeStampedModel):
 
     # Lineage and story
     species = models.ForeignKey(Species, on_delete=models.SET_NULL, null=True, blank=True, related_name="characters")
-    subrace = models.ForeignKey(Subrace, on_delete=models.SET_NULL, null=True, blank=True, related_name="characters")
     background = models.ForeignKey(Background, on_delete=models.SET_NULL, null=True, blank=True, related_name="characters")
 
     # Ability scores (1..30)
@@ -192,7 +170,7 @@ class Character(TimeStampedModel):
     wis_score = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(30)], default=10)
     cha_score = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(30)], default=10)
 
-    alignment = models.CharField(max_length=32, blank=True, default="")
+    # Experience and inspiration
     xp = models.PositiveIntegerField(default=0)
     inspiration = models.BooleanField(default=False)
 
