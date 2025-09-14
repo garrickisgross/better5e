@@ -42,6 +42,7 @@ class FeatForm(forms.ModelForm):
         widget=forms.TextInput(attrs={"class": "input input-bordered w-full"}),
     )
     grants = forms.CharField(required=False, widget=forms.HiddenInput())
+    modifiers = forms.CharField(required=False, widget=forms.HiddenInput())
 
     class Meta:
         model = Feat
@@ -78,6 +79,14 @@ class FeatForm(forms.ModelForm):
         if cd.get("grants"):
             try:
                 data["grants"] = json.loads(cd["grants"])
+            except Exception:
+                pass
+        if cd.get("modifiers"):
+            try:
+                mods = json.loads(cd["modifiers"]) or []
+                # Expect list of {target, operation, value}
+                if isinstance(mods, list):
+                    data["modifiers"] = mods
             except Exception:
                 pass
         feat.data = data

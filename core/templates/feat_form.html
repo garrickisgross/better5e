@@ -13,47 +13,86 @@
         {{ form.description }}
     </div>
     <fieldset class="border p-4 rounded-lg">
-        <legend class="font-semibold">Prerequisites (optional)</legend>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <legend class="font-semibold">Optional Properties</legend>
+        <div class="space-y-6">
             <div>
-                <label for="{{ form.prerequisite_class.id_for_label }}" class="block mb-1">Class</label>
-                {{ form.prerequisite_class }}
+                <h3 class="font-semibold mb-2">Prerequisites</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="{{ form.prerequisite_class.id_for_label }}" class="block mb-1">Class</label>
+                        {{ form.prerequisite_class }}
+                    </div>
+                    <div>
+                        <label for="{{ form.prerequisite_class_level.id_for_label }}" class="block mb-1">Class Level</label>
+                        {{ form.prerequisite_class_level }}
+                    </div>
+                    <div>
+                        <label for="{{ form.prerequisite_feature.id_for_label }}" class="block mb-1">Feature</label>
+                        {{ form.prerequisite_feature }}
+                    </div>
+                    <div>
+                        <label for="{{ form.prerequisite_total_level.id_for_label }}" class="block mb-1">Total Level</label>
+                        {{ form.prerequisite_total_level }}
+                    </div>
+                    <div>
+                        <label for="{{ form.prerequisite_species.id_for_label }}" class="block mb-1">Species</label>
+                        {{ form.prerequisite_species }}
+                    </div>
+                </div>
             </div>
             <div>
-                <label for="{{ form.prerequisite_class_level.id_for_label }}" class="block mb-1">Class Level</label>
-                {{ form.prerequisite_class_level }}
+                <h3 class="font-semibold mb-2">Usage</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="{{ form.charges.id_for_label }}" class="block mb-1">Charges</label>
+                        {{ form.charges }}
+                    </div>
+                    <div>
+                        <label for="{{ form.recharge_type.id_for_label }}" class="block mb-1">Recharge Type</label>
+                        {{ form.recharge_type }}
+                    </div>
+                </div>
             </div>
             <div>
-                <label for="{{ form.prerequisite_feature.id_for_label }}" class="block mb-1">Feature</label>
-                {{ form.prerequisite_feature }}
+                <h3 class="font-semibold mb-2">Grants</h3>
+                <input id="grant-search" type="text" class="input input-bordered w-full" placeholder="Search creations..." autocomplete="off">
+                <div id="grant-results" class="mt-2 space-x-2"></div>
+                <div id="grant-selected" class="mt-2 space-x-2"></div>
+                {{ form.grants }}
             </div>
             <div>
-                <label for="{{ form.prerequisite_total_level.id_for_label }}" class="block mb-1">Total Level</label>
-                {{ form.prerequisite_total_level }}
-            </div>
-            <div>
-                <label for="{{ form.prerequisite_species.id_for_label }}" class="block mb-1">Species</label>
-                {{ form.prerequisite_species }}
+                <h3 class="font-semibold mb-2">Modifiers</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label for="modifier-target" class="block mb-1">Target</label>
+                        <select id="modifier-target" class="select select-bordered w-full"></select>
+                    </div>
+                    <div>
+                        <label for="modifier-operation" class="block mb-1">Operation</label>
+                        <select id="modifier-operation" class="select select-bordered w-full">
+                            <option value="set">Set</option>
+                            <option value="add">Add</option>
+                            <option value="subtract">Subtract</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="modifier-value" class="block mb-1">Value</label>
+                        <input id="modifier-value-number" type="number" class="input input-bordered w-full" />
+                        <select id="modifier-value-bool" class="select select-bordered w-full hidden">
+                            <option value="true">True</option>
+                            <option value="false">False</option>
+                        </select>
+                        <input id="modifier-value-text" type="text" class="input input-bordered w-full hidden" />
+                    </div>
+                    <div>
+                        <button type="button" id="modifier-add" class="btn btn-outline">Add Modifier</button>
+                    </div>
+                </div>
+                <div id="modifier-list" class="mt-3 space-x-2"></div>
+                {{ form.modifiers }}
             </div>
         </div>
     </fieldset>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-            <label for="{{ form.charges.id_for_label }}" class="block mb-1">Charges</label>
-            {{ form.charges }}
-        </div>
-        <div>
-            <label for="{{ form.recharge_type.id_for_label }}" class="block mb-1">Recharge Type</label>
-            {{ form.recharge_type }}
-        </div>
-    </div>
-    <div>
-        <label class="block mb-1 font-semibold">Grants (optional)</label>
-        <input id="grant-search" type="text" class="input input-bordered w-full" placeholder="Search creations..." autocomplete="off">
-        <div id="grant-results" class="mt-2 space-x-2"></div>
-        <div id="grant-selected" class="mt-2 space-x-2"></div>
-        {{ form.grants }}
-    </div>
     <div>
         <button type="submit" class="btn btn-primary">Save Feature</button>
     </div>
@@ -110,5 +149,130 @@ searchInput.addEventListener('input', () => {
       });
     });
 });
+
+// ---- Modifiers UI ----
+const modifierTargets = [
+  { value: 'str_score', label: 'Strength Score', type: 'int' },
+  { value: 'dex_score', label: 'Dexterity Score', type: 'int' },
+  { value: 'con_score', label: 'Constitution Score', type: 'int' },
+  { value: 'int_score', label: 'Intelligence Score', type: 'int' },
+  { value: 'wis_score', label: 'Wisdom Score', type: 'int' },
+  { value: 'cha_score', label: 'Charisma Score', type: 'int' },
+  { value: 'xp', label: 'Experience Points', type: 'int' },
+  { value: 'hp_current', label: 'HP Current', type: 'int' },
+  { value: 'hp_temp', label: 'HP Temporary', type: 'int' },
+  { value: 'inspiration', label: 'Inspiration', type: 'bool' },
+  // Extend as needed
+];
+
+const modifierTargetSelect = document.getElementById('modifier-target');
+const modifierOpSelect = document.getElementById('modifier-operation');
+const modifierValueNumber = document.getElementById('modifier-value-number');
+const modifierValueBool = document.getElementById('modifier-value-bool');
+const modifierValueText = document.getElementById('modifier-value-text');
+const modifierAddBtn = document.getElementById('modifier-add');
+const modifierList = document.getElementById('modifier-list');
+const modifiersHidden = document.getElementById('id_modifiers');
+
+// Populate target dropdown
+modifierTargets.forEach(t => {
+  const opt = document.createElement('option');
+  opt.value = t.value;
+  opt.textContent = t.label;
+  modifierTargetSelect.appendChild(opt);
+});
+
+function currentTargetMeta() {
+  const val = modifierTargetSelect.value;
+  return modifierTargets.find(t => t.value === val) || modifierTargets[0];
+}
+
+function updateValueInputForTarget() {
+  const meta = currentTargetMeta();
+  // Show/hide value inputs based on type
+  if (meta.type === 'int') {
+    modifierValueNumber.classList.remove('hidden');
+    modifierValueBool.classList.add('hidden');
+    modifierValueText.classList.add('hidden');
+    // All operations valid
+    Array.from(modifierOpSelect.options).forEach(o => o.disabled = false);
+  } else if (meta.type === 'bool') {
+    modifierValueNumber.classList.add('hidden');
+    modifierValueBool.classList.remove('hidden');
+    modifierValueText.classList.add('hidden');
+    // Only 'set' is valid
+    modifierOpSelect.value = 'set';
+    Array.from(modifierOpSelect.options).forEach(o => {
+      o.disabled = (o.value !== 'set');
+    });
+  } else { // text
+    modifierValueNumber.classList.add('hidden');
+    modifierValueBool.classList.add('hidden');
+    modifierValueText.classList.remove('hidden');
+    // Only 'set' is valid for text
+    modifierOpSelect.value = 'set';
+    Array.from(modifierOpSelect.options).forEach(o => {
+      o.disabled = (o.value !== 'set');
+    });
+  }
+}
+
+modifierTargetSelect.addEventListener('change', updateValueInputForTarget);
+updateValueInputForTarget();
+
+function renderModifiersHidden() {
+  const list = Array.from(modifierList.children).map(el => {
+    const meta = modifierTargets.find(t => t.value === el.dataset.target);
+    let value;
+    if (el.dataset.type === 'int') {
+      value = parseInt(el.dataset.value);
+    } else if (el.dataset.type === 'bool') {
+      value = (el.dataset.value === 'true');
+    } else {
+      value = el.dataset.value;
+    }
+    return { target: el.dataset.target, operation: el.dataset.operation, value };
+  });
+  modifiersHidden.value = JSON.stringify(list);
+}
+
+function addModifier() {
+  const meta = currentTargetMeta();
+  const op = modifierOpSelect.value;
+  let valueRaw;
+  if (meta.type === 'int') {
+    const n = parseInt(modifierValueNumber.value);
+    if (isNaN(n)) { return; }
+    valueRaw = String(n);
+  } else if (meta.type === 'bool') {
+    valueRaw = modifierValueBool.value; // 'true' | 'false'
+  } else {
+    if (!modifierValueText.value.trim()) { return; }
+    valueRaw = modifierValueText.value.trim();
+  }
+
+  const badge = document.createElement('span');
+  badge.className = 'badge badge-outline mr-1 mb-1';
+  const label = `${meta.label}: ${op} ${meta.type === 'bool' ? (valueRaw === 'true' ? 'True' : 'False') : valueRaw}`;
+  badge.textContent = label;
+  badge.dataset.target = meta.value;
+  badge.dataset.operation = op;
+  badge.dataset.value = valueRaw;
+  badge.dataset.type = meta.type;
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'ml-1 text-xs';
+  btn.textContent = '\u2715';
+  btn.addEventListener('click', () => {
+    modifierList.removeChild(badge);
+    renderModifiersHidden();
+  });
+  badge.appendChild(btn);
+  modifierList.appendChild(badge);
+  renderModifiersHidden();
+}
+
+modifierAddBtn.addEventListener('click', addModifier);
 </script>
 {% endblock %}
