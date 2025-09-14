@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Iterable, Optional
-
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -43,11 +41,11 @@ class Skill(TimeStampedModel):
     ability = models.CharField(max_length=3, choices=ABILITY_CHOICES)
     description = models.TextField(blank=True, default="")
 
-    class Meta:
+    class Meta: # type: ignore
         ordering = ["name"]
 
     def __str__(self) -> str:  # pragma: no cover - trivial
-        return f"{self.name} ({self.get_ability_display()})"
+        return f"{self.name} ({self.get_ability_display()})" # type: ignore
 
 
 class Species(TimeStampedModel):
@@ -67,7 +65,7 @@ class Species(TimeStampedModel):
     # Arbitrary extensibility: bonuses, traits, options, etc.
     data = models.JSONField(blank=True, default=dict)
 
-    class Meta:
+    class Meta: # type: ignore
         verbose_name_plural = "species"
         ordering = ["name"]
 
@@ -80,7 +78,7 @@ class Subrace(TimeStampedModel):
     name = models.CharField(max_length=64)
     data = models.JSONField(blank=True, default=dict)
 
-    class Meta:
+    class Meta: # type: ignore
         unique_together = ("species", "name")
         ordering = ["species__name", "name"]
 
@@ -96,7 +94,7 @@ class Background(TimeStampedModel):
     skills = models.ManyToManyField(Skill, blank=True, related_name="backgrounds")
     data = models.JSONField(blank=True, default=dict)
 
-    class Meta:
+    class Meta: # type: ignore
         ordering = ["name"]
 
     def __str__(self) -> str:  # pragma: no cover - trivial
@@ -108,7 +106,7 @@ class Feat(TimeStampedModel):
     description = models.TextField()
     data = models.JSONField(blank=True, default=dict)
 
-    class Meta:
+    class Meta: # type: ignore
         ordering = ["name"]
 
     def __str__(self) -> str:  # pragma: no cover - trivial
@@ -124,7 +122,7 @@ class Class(TimeStampedModel):
     skill_proficiency_options = models.JSONField(blank=True, default=dict)
     data = models.JSONField(blank=True, default=dict)
 
-    class Meta:
+    class Meta: # type: ignore
         verbose_name_plural = "classes"
         ordering = ["name"]
 
@@ -137,7 +135,7 @@ class Subclass(TimeStampedModel):
     name = models.CharField(max_length=64)
     data = models.JSONField(blank=True, default=dict)
 
-    class Meta:
+    class Meta: # type: ignore
         unique_together = ("parent_class", "name")
         ordering = ["parent_class__name", "name"]
 
@@ -156,7 +154,7 @@ class Spell(TimeStampedModel):
     description = models.TextField(blank=True, default="")
     data = models.JSONField(blank=True, default=dict)
 
-    class Meta:
+    class Meta: # type: ignore
         ordering = ["level", "name"]
 
     def __str__(self) -> str:  # pragma: no cover - trivial
@@ -170,7 +168,7 @@ class Item(TimeStampedModel):
     description = models.TextField(blank=True, default="")
     data = models.JSONField(blank=True, default=dict)
 
-    class Meta:
+    class Meta: # type: ignore
         ordering = ["name"]
 
     def __str__(self) -> str:  # pragma: no cover - trivial
@@ -209,7 +207,7 @@ class Character(TimeStampedModel):
     # Misc extensibility: coins, notes, UI toggles, custom flags, etc.
     data = models.JSONField(blank=True, default=dict)
 
-    class Meta:
+    class Meta: # type: ignore
         indexes = [models.Index(fields=["user", "name"])]
         unique_together = ("user", "name")
         ordering = ["name"]
@@ -224,7 +222,7 @@ class Character(TimeStampedModel):
 
     @property
     def level_total(self) -> int:
-        agg = self.classes.aggregate(total=models.Sum("level"))
+        agg = self.classes.aggregate(total=models.Sum("level")) # type: ignore
         return int(agg["total"] or 0)
 
     @property
@@ -259,7 +257,7 @@ class Character(TimeStampedModel):
     # Skill proficiency: 0 = none, 1 = proficient, 2 = expertise
     def skill_proficiency_level(self, skill: Skill | int) -> int:
         skill_id = skill.pk if isinstance(skill, Skill) else int(skill)
-        rel = self.skill_links.filter(skill_id=skill_id).first()
+        rel = self.skill_links.filter(skill_id=skill_id).first() # type: ignore
         if not rel:
             return 0
         return 2 if rel.expertise else 1
@@ -271,7 +269,7 @@ class Character(TimeStampedModel):
 
     def proficient_saving_throws(self) -> set[str]:
         profs: set[str] = set()
-        for cc in self.classes.select_related("clazz").all():
+        for cc in self.classes.select_related("clazz").all(): # type: ignore
             for ab in (cc.clazz.saving_throws or []):
                 profs.add(ab)
         return profs
@@ -288,7 +286,7 @@ class CharacterClass(TimeStampedModel):
     level = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(20)], default=1)
     is_primary = models.BooleanField(default=False)
 
-    class Meta:
+    class Meta: # type: ignore
         unique_together = ("character", "clazz")
         indexes = [models.Index(fields=["character", "clazz"])]
 
@@ -301,7 +299,7 @@ class CharacterSkill(TimeStampedModel):
     skill = models.ForeignKey(Skill, on_delete=models.CASCADE, related_name="character_links")
     expertise = models.BooleanField(default=False)
 
-    class Meta:
+    class Meta: # type: ignore
         unique_together = ("character", "skill")
         indexes = [models.Index(fields=["character", "skill"])]
 
@@ -315,7 +313,7 @@ class CharacterItem(TimeStampedModel):
     quantity = models.PositiveIntegerField(default=1)
     data = models.JSONField(blank=True, default=dict)
 
-    class Meta:
+    class Meta: # type: ignore
         unique_together = ("character", "item")
         indexes = [models.Index(fields=["character", "item"])]
 
@@ -327,6 +325,6 @@ class CharacterSpell(TimeStampedModel):
     prepared = models.BooleanField(default=False)
     data = models.JSONField(blank=True, default=dict)
 
-    class Meta:
+    class Meta: # type: ignore
         unique_together = ("character", "spell")
         indexes = [models.Index(fields=["character", "spell"])]
