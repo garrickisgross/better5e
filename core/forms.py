@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django import forms
 
-from .models import Feat, Class, Species
+from .models import Feat, Class, Species, Skill, Subclass
 
 
 class FeatForm(forms.ModelForm):
@@ -93,3 +93,120 @@ class FeatForm(forms.ModelForm):
         if commit:
             feat.save()
         return feat
+
+
+class ClassForm(forms.ModelForm):
+    description = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"class": "textarea textarea-bordered w-full", "rows": 4}),
+    )
+    level_map = forms.CharField(required=False, widget=forms.HiddenInput())
+    saving_throws = forms.MultipleChoiceField(
+        choices=Skill.ABILITY_CHOICES,
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "select select-bordered w-full"}),
+    )
+    skill_choose = forms.IntegerField(
+        min_value=0,
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "input input-bordered w-full"}),
+    )
+    skill_options = forms.ModelMultipleChoiceField(
+        queryset=Skill.objects.all(),
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "select select-bordered w-full"}),
+    )
+
+    class Meta:
+        model = Class
+        fields = ["name", "hit_die", "saving_throws"]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "input input-bordered w-full"}),
+            "hit_die": forms.NumberInput(attrs={"class": "input input-bordered w-full", "min": 1}),
+        }
+
+    def save(self, commit: bool = True) -> Class:
+        cls = super().save(commit=False)
+        data: dict = {}
+        cd = self.cleaned_data
+        if cd.get("description"):
+            data["description"] = cd["description"]
+        if cd.get("level_map"):
+            import json
+
+            try:
+                data["level_map"] = json.loads(cd["level_map"])
+            except Exception:
+                pass
+        if cd.get("skill_choose") or cd.get("skill_options"):
+            cls.skill_proficiency_options = {
+                "choose": cd.get("skill_choose") or 0,
+                "from": [s.id for s in cd.get("skill_options", [])],
+            }
+        cls.data = data
+        if commit:
+            cls.save()
+        return cls
+
+
+class SubclassForm(forms.ModelForm):
+    description = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"class": "textarea textarea-bordered w-full", "rows": 4}),
+    )
+    level_map = forms.CharField(required=False, widget=forms.HiddenInput())
+    hit_die_override = forms.IntegerField(
+        min_value=1,
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "input input-bordered w-full"}),
+    )
+    saving_throws = forms.MultipleChoiceField(
+        choices=Skill.ABILITY_CHOICES,
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "select select-bordered w-full"}),
+    )
+    skill_choose = forms.IntegerField(
+        min_value=0,
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "input input-bordered w-full"}),
+    )
+    skill_options = forms.ModelMultipleChoiceField(
+        queryset=Skill.objects.all(),
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "select select-bordered w-full"}),
+    )
+
+    class Meta:
+        model = Subclass
+        fields = ["parent_class", "name"]
+        widgets = {
+            "parent_class": forms.Select(attrs={"class": "select select-bordered w-full"}),
+            "name": forms.TextInput(attrs={"class": "input input-bordered w-full"}),
+        }
+
+    def save(self, commit: bool = True) -> Subclass:
+        sub = super().save(commit=False)
+        data: dict = {}
+        cd = self.cleaned_data
+        if cd.get("description"):
+            data["description"] = cd["description"]
+        if cd.get("level_map"):
+            import json
+
+            try:
+                data["level_map"] = json.loads(cd["level_map"])
+            except Exception:
+                pass
+        if cd.get("hit_die_override"):
+            data["hit_die_override"] = cd["hit_die_override"]
+        if cd.get("saving_throws"):
+            data["saving_throws"] = cd["saving_throws"]
+        if cd.get("skill_choose") or cd.get("skill_options"):
+            data["skill_proficiency_options"] = {
+                "choose": cd.get("skill_choose") or 0,
+                "from": [s.id for s in cd.get("skill_options", [])],
+            }
+        sub.data = data
+        if commit:
+            sub.save()
+        return sub

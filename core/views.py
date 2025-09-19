@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 import urllib.request
 import urllib.error
 
-from .forms import FeatForm
+from .forms import FeatForm, ClassForm, SubclassForm
 from .models import Feat, Spell, Item, Language, Skill
 
 
@@ -27,6 +27,32 @@ def feat_create(request):
     else:
         form = FeatForm()
     return render(request, "feat_form.html", {"form": form, "title": "Create Feature"})
+
+
+@login_required
+def class_create(request):
+    if request.method == "POST":
+        form = ClassForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Class created.")
+            return redirect("core:home")
+    else:
+        form = ClassForm()
+    return render(request, "class_form.html", {"form": form, "title": "Create Class"})
+
+
+@login_required
+def subclass_create(request):
+    if request.method == "POST":
+        form = SubclassForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Subclass created.")
+            return redirect("core:home")
+    else:
+        form = SubclassForm()
+    return render(request, "subclass_form.html", {"form": form, "title": "Create Subclass"})
 
 
 @login_required
